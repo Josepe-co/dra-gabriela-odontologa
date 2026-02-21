@@ -1,0 +1,364 @@
+================================================================
+  LA CASA DE LOS SNACK'S — SISTEMA DE MODAL Y CARRITO
+================================================================
+
+Fecha de documentación: 21 de febrero de 2026
+Archivo: script.js (621 líneas)
+
+
+================================================================
+  RESUMEN GENERAL
+================================================================
+
+El sistema tiene DOS modales principales:
+
+  1. MODAL DE PRODUCTO  → Se abre al hacer clic en "Pedir ahora 🛵"
+                          en cualquier tarjeta de producto.
+                          Permite elegir variante, cantidad y
+                          agregar el artículo al carrito.
+
+  2. MODAL DEL CARRITO  → Se abre con el botón flotante (FAB) que
+                          aparece en pantalla cuando hay items en
+                          el carrito. Muestra el resumen del pedido,
+                          tipo de entrega y envía todo por WhatsApp.
+
+Además existe una MASCOTA FLOTANTE llamada KORI que reacciona
+con frases y animaciones según las acciones del usuario.
+
+
+================================================================
+  NÚMERO DE WHATSAPP CONFIGURADO
+================================================================
+
+  Número:              961 655 6465
+  Formato en código:   529616556465
+  Variable:            const WA_NUMBER = "529616556465";
+  Ubicada en:          script.js
+
+  Para cambiar el número: editar la variable WA_NUMBER al inicio
+  de la sección de modales en script.js.
+
+  Costo de envío a domicilio: $15
+  Variable: const DELIVERY_FEE = 15;
+
+
+================================================================
+  PRODUCTOS Y VARIANTES CONFIGURADOS
+================================================================
+
+  1. Banderillas de Salchicha (badge: "Popular")
+     ─────────────────────────────────────────
+     Clásica          $50
+     Papa             $60
+     Ramen            $60
+     Jalapeño         $60
+     Flaminhot        $60
+     Cheddar Chetos   $60
+     Takis Azules     $60
+     Ruffles          $60
+
+  2. Banderillas Mixtas (sin badge)
+     ─────────────────────────────────────────
+     Clásica          $65
+     Papa             $70
+     Ramen            $70
+     Jalapeño         $70
+     Flaminhot        $70
+     Cheddar Chetos   $70
+     Takis Azules     $70
+     Ruffles          $70
+
+  3. Banderillas Base Queso (badge: "Favorita")
+     ─────────────────────────────────────────
+     Clásica          $70
+     Papa             $80
+     Ramen            $80
+     Jalapeño         $80
+     Flaminhot        $80
+     Cheddar Chetos   $80
+     Takis Azules     $80
+     Ruffles          $80
+
+  4. Bolitas de Queso (badge: "6 piezas")
+     ─────────────────────────────────────────
+     Clásica          $90
+     Papa             $100
+     Ramen            $100
+     Jalapeño         $100
+     Flaminhot        $100
+     Cheddar Chetos   $100
+     Combinadas       $130
+
+  5. Papas a la Francesa (sin badge)
+     ─────────────────────────────────────────
+     Porción Chica    $60
+     Porción Grande   $100
+
+  6. Salchipapas (sin badge)
+     ─────────────────────────────────────────
+     Porción Chica    $70
+     Porción Grande   $120
+
+  Para agregar un producto nuevo: añadir un objeto al array
+  "products" en script.js con los campos: id, name, badge,
+  description, image y variants (array de [nombre, "$precio"]).
+
+
+================================================================
+  ESTADO GLOBAL (variables en memoria)
+================================================================
+
+  currentProduct        → Objeto del producto actualmente abierto
+                          en el modal. Null si no hay ninguno.
+
+  selectedVariantIndex  → Índice (número) de la variante elegida
+                          dentro del array variants del producto.
+                          Por defecto 0 (primera variante).
+
+  currentQty            → Cantidad elegida en el modal de producto.
+                          Mínimo: 1 · Máximo: 20
+
+  cart[]                → Array de objetos con los items del pedido.
+                          Cada item tiene:
+                            key         → "productId__variantIndex"
+                            productId   → id del producto
+                            productName → nombre del producto
+                            variant     → [nombre, "$precio"]
+                            qty         → cantidad
+
+
+================================================================
+  MODAL DE PRODUCTO — FUNCIONAMIENTO PASO A PASO
+================================================================
+
+  1. El usuario hace clic en "Pedir ahora 🛵" de cualquier tarjeta.
+
+  2. Se llama openOrderModal(productId):
+       - Busca el producto en el array products[] por su id.
+       - Escribe el nombre del producto en el título del modal.
+       - Resetea la variante seleccionada al índice 0.
+       - Resetea la cantidad a 1.
+       - Renderiza los chips de variantes (renderVariants).
+       - Calcula y muestra el subtotal.
+       - Pone a Kori en estado "normal".
+       - Agrega la clase "open" al overlay y bloquea el scroll.
+
+  3. El usuario selecciona una variante (chip):
+       - Se marca el chip como activo (clase "active").
+       - Se recalcula el subtotal inmediatamente.
+
+  4. El usuario ajusta la cantidad con – / +:
+       - Mínimo 1, máximo 20.
+       - El subtotal se actualiza en tiempo real.
+       → Fórmula: precio_variante × cantidad
+
+  5. El usuario hace clic en "Agregar al carrito":
+       - Se busca si ya existe el mismo producto + variante en cart[].
+       - Si existe: suma la cantidad (máx. 20).
+       - Si no existe: crea un nuevo objeto y lo agrega a cart[].
+       - Actualiza el badge del carrito (FAB flotante).
+       - Cierra el modal de producto.
+       - Kori muestra un mensaje aleatorio de confirmación y
+         cambia a estado "feliz" durante ~2.8 segundos.
+
+  Mensajes aleatorios de Kori al agregar:
+       "¡Listo! Agregado al pedido 🛒"
+       "¡Va para adentro! 🔥"
+       "¡Buena elección! 😋"
+       "¡Sigue pidiendo! 🎉"
+
+  CÓMO CERRAR EL MODAL DE PRODUCTO (3 maneras):
+       1. Clic en la X (esquina superior derecha).
+       2. Clic fuera del modal (en el fondo oscuro).
+       3. Tecla ESC del teclado.
+
+
+================================================================
+  MODAL DEL CARRITO — FUNCIONAMIENTO PASO A PASO
+================================================================
+
+  1. El botón flotante FAB (#fabCart) solo es VISIBLE cuando
+     hay al menos 1 item en el carrito.
+     Muestra un badge con el total de unidades.
+
+  2. Al hacer clic en el FAB se llama openCartModal():
+       - Renderiza la lista de items (renderCartItems).
+       - Calcula el total actualizado.
+       - Actualiza visibilidad de sección de entrega.
+       - Pone a Kori del carrito en estado "normal".
+       - Agrega la clase "open" al overlay y bloquea el scroll.
+
+  3. LISTA DE ITEMS DEL CARRITO:
+       - Si cart[] está vacío: muestra mensaje "carrito vacío"
+         y deshabilita el botón de enviar.
+       - Si hay items: muestra cada uno con:
+           · Nombre del producto
+           · Variante elegida
+           · Precio unitario ($X c/u)
+           · Controles de cantidad (− y +)
+           · Total del renglón ($X)
+           · Botón ✕ para eliminar
+
+  4. CONTROLES DE CANTIDAD DENTRO DEL CARRITO:
+       - Botón +: incrementa en 1 (máx. 20).
+       - Botón −: decrementa en 1. Si llega a 0, elimina el item.
+       - Botón ✕: elimina el item directamente.
+       - Tras cualquier cambio: actualiza badge, re-renderiza
+         la lista y recalcula el total.
+
+  5. TIPO DE ENTREGA (radio buttons):
+       - "Envío a domicilio" → muestra campo de dirección y
+         suma $15 al total.
+       - "Recoger en local"  → oculta campo de dirección y
+         no suma costo extra.
+       → El total se recalcula automáticamente al cambiar.
+
+  6. CAMPO DE DIRECCIÓN:
+       - Solo visible si se eligió "Envío a domicilio".
+       - Si el usuario intenta enviar sin llenarlo: el campo
+         se pone en rojo, aparece un mensaje de error, se hace
+         foco en el campo y se anima con vibración (shake).
+       - Si el usuario empieza a escribir: el error desaparece.
+
+  7. NOTAS EXTRA (opcional):
+       - Campo libre para personalizaciones del pedido.
+       - Ej: "sin picante", "extra salsa", etc.
+
+  8. TOTAL MOSTRADO:
+       → Suma de (precio_variante × cantidad) de todos los items
+         + $15 si se eligió envío a domicilio.
+
+  CÓMO CERRAR EL CARRITO (3 maneras):
+       1. Clic en la X del modal.
+       2. Clic fuera del modal (fondo oscuro).
+       3. Tecla ESC del teclado.
+
+
+================================================================
+  BADGE DEL CARRITO (FAB flotante)
+================================================================
+
+  - Se muestra/oculta automáticamente con updateCartBadge().
+  - El número refleja el TOTAL DE UNIDADES (suma de qty de todos
+    los items, no solo cantidad de productos distintos).
+  - El FAB se oculta completamente (display: none) cuando el
+    carrito está vacío.
+  - Cada vez que se actualiza, el badge re-anima (efecto bounce).
+
+
+================================================================
+  ENVÍO DEL PEDIDO POR WHATSAPP
+================================================================
+
+  Al hacer clic en "Enviar pedido por WhatsApp":
+
+  1. Valida que haya items en el carrito.
+  2. Si es domicilio, valida que haya dirección.
+  3. Construye el mensaje automáticamente:
+
+  ─── FORMATO DEL MENSAJE GENERADO ───────────────────────────
+
+  ¡Hola La Casa de los Snack's! 🍟 Quiero hacer un pedido:
+
+  1. *Banderillas de Salchicha* – Clásica × 2 = $100
+  2. *Bolitas de Queso* – Jalapeño = $100
+
+  🛵 *Envío a domicilio* (+$15)
+  📍 *Dirección:* Calle Benito Juárez #12, Col. Centro
+  💰 *Total:* $215
+  📝 *Notas:* Sin chile
+
+  ─── O SI ES RECOGER EN LOCAL ────────────────────────────────
+
+  ¡Hola La Casa de los Snack's! 🍟 Quiero hacer un pedido:
+
+  1. *Salchipapas* – Porción Grande = $120
+
+  🏠 *Recoger en local*
+  💰 *Total:* $120
+
+  ─────────────────────────────────────────────────────────────
+
+  4. Kori (modal y flotante) cambia a estado "feliz".
+  5. Tras 900ms abre WhatsApp con el link:
+       https://wa.me/529616556465?text=[mensaje codificado]
+  6. Limpia el carrito (cart = []).
+  7. Actualiza badge (FAB desaparece).
+  8. Cierra el modal del carrito.
+  9. Limpia campo de dirección y notas.
+  10. Kori vuelve al estado "normal" tras 3 segundos.
+
+
+================================================================
+  MASCOTA KORI — ESTADOS Y COMPORTAMIENTO
+================================================================
+
+  Kori aparece en 3 lugares:
+    1. Flotante en la página        → koriImg (#koriImg)
+    2. Dentro del modal de producto → koriModalImg (#koriModalImg)
+    3. Dentro del modal de carrito  → koriCartImg (#koriCartImg)
+
+  Estados:
+    "normal"  → imagen: kori-normal.png
+    "feliz"   → imagen: kori-feliz.png + animación bounce
+
+  Frases de Kori flotante (al hacer clic en ella):
+    "¡Hola! ¿Qué se te antoja hoy? 😋"
+    "Las banderillas están increíbles 🌶️"
+    "¡Pide lo que quieras, todo está rico! 🔥"
+    "Las bolitas de queso HOY están 🧀"
+    (cicla en orden al hacer clic)
+
+  Cuándo cambia de estado:
+    → "feliz" al agregar item al carrito (por ~2.8s)
+    → "feliz" al enviar el pedido por WhatsApp (por ~3s)
+    → "feliz" mientras el modal del carrito envía
+    → "normal" siempre que se abre un modal de producto
+
+  Función de animación bounce:
+    bounceKoriEl(el) → quita y re-agrega la clase "kori-bounce"
+
+
+================================================================
+  OTROS ELEMENTOS INTERACTIVOS DE LA PÁGINA
+================================================================
+
+  ACORDEÓN DE PRECIOS (en tarjetas de producto):
+    - Botón "Ver precios ▼" despliega/colapsa la lista de precios.
+    - Solo puede haber un acordeón abierto a la vez.
+    - Usa aria-expanded para accesibilidad.
+
+  NAVBAR:
+    - Agrega la clase "scrolled" si el scroll supera 30px.
+    - Menú hamburguesa en móvil con toggle de clase "open".
+    - Los enlaces internos cierran el menú al hacer clic.
+
+  SCROLL REVEAL:
+    - Usa IntersectionObserver con threshold 0.12.
+    - Agrega la clase "visible" a elementos .reveal cuando
+      entran al viewport (animación de aparición).
+    - Se deja de observar el elemento tras la primera aparición.
+
+  SMOOTH SCROLL:
+    - Todos los enlaces con href="#sección" usan
+      scrollIntoView({ behavior: "smooth" }).
+
+
+================================================================
+  ARCHIVOS DEL PROYECTO
+================================================================
+
+  index.html    → Estructura HTML completa: navbar, hero, menú,
+                  modal de producto, modal de carrito, Kori,
+                  FAB del carrito, sección de contacto, footer.
+
+  styles.css    → Todo el diseño visual: colores, animaciones,
+                  layout, responsive, estados de modales.
+
+  script.js     → Toda la lógica: renderizado de productos,
+                  acordeones, modales, carrito, Kori,
+                  generación del mensaje y envío por WhatsApp.
+
+  assets/       → Imágenes y recursos estáticos.
+
+================================================================

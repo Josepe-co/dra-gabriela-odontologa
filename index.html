@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dra. Gabriela De Leon Salazar — Odontología en Tuxtla Gutiérrez</title>
+  <meta name="description" content="Consultorio dental de la Dra. Gabriela De Leon Salazar en Tuxtla Gutiérrez, Chiapas. Limpieza dental, blanqueamiento, ortodoncia y más. Agenda tu cita hoy." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       NAVBAR
+  ═══════════════════════════════════════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#inicio" class="nav-logo">
+        <span class="logo-icon">🦷</span>
+        <span class="logo-text">Dra. <strong>Gabriela De Leon</strong></span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#inicio" class="nav-link active">Inicio</a></li>
+        <li><a href="#perfil" class="nav-link">Sobre mí</a></li>
+        <li><a href="#servicios" class="nav-link">Servicios</a></li>
+        <li><a href="#testimonios" class="nav-link">Testimonios</a></li>
+        <li><a href="#contacto" class="nav-link">Contacto</a></li>
+        <li>
+          <button class="btn-cta-nav" id="btnAgendarNav">
+            Agendar Cita 📅
+          </button>
+        </li>
+      </ul>
+
+      <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════ -->
+  <section class="hero" id="inicio">
+    <div class="hero-overlay"></div>
+    <img
+      src="https://placehold.co/1920x1060/0A3D62/CAF0F8?text=📸+Foto+de+la+Dra.+Gabriela+(reemplazar)"
+      alt="Dra. Gabriela De Leon Salazar"
+      class="hero-bg"
+    />
+    <div class="hero-content reveal">
+      <span class="hero-badge">✨ Odontología de confianza en Tuxtla Gutiérrez</span>
+      <h1 class="hero-title">
+        Cuidamos tu sonrisa<br />
+        <span class="hero-highlight">con el trato que mereces.</span>
+      </h1>
+      <p class="hero-subtitle">
+        Atención personalizada, sin dolor y con la más alta calidad dental.<br />
+        Tu sonrisa es nuestra especialidad.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-hero-primary" id="btnAgendarHero">
+          Agendar Cita 📅
+        </button>
+        <a href="#servicios" class="btn-hero-secondary">Ver servicios →</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-number">+500</span>
+          <span class="stat-label">Pacientes atendidos</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-number">5+</span>
+          <span class="stat-label">Años de experiencia</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">Compromiso contigo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       AVISO DE CONFIANZA (Trust Bar)
+  ═══════════════════════════════════════════ -->
+  <div class="trust-bar">
+    <div class="trust-container">
+      <div class="trust-item">
+        <span class="trust-icon">🏥</span>
+        <span>Equipo moderno y esterilizado</span>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">💉</span>
+        <span>Anestesia local indolora</span>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">📋</span>
+        <span>Primera consulta diagnóstica</span>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">😊</span>
+        <span>Trato humano y cálido</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PERFIL PROFESIONAL
+  ═══════════════════════════════════════════ -->
+  <section class="perfil" id="perfil">
+    <div class="container">
+      <div class="perfil-grid reveal">
+
+        <div class="perfil-imagen-wrap">
+          <div class="perfil-img-badge">Cirujana Dentista</div>
+          <img
+            src="https://placehold.co/480x580/CAF0F8/0A3D62?text=📸+Foto+Dra.+Gabriela+(reemplazar)"
+            alt="Dra. Gabriela De Leon Salazar"
+            class="perfil-foto"
+          />
+          <div class="perfil-img-shapes"></div>
+        </div>
+
+        <div class="perfil-info">
+          <span class="section-label">Conoce a tu odontóloga</span>
+          <h2 class="section-title">
+            Dra. Gabriela<br /><strong>De Leon Salazar</strong>
+          </h2>
+          <p class="perfil-tagline">"Odontología sin miedo, con ciencia y corazón."</p>
+
+          <p class="perfil-texto">
+            Soy Cirujana Dentista egresada de la <strong>Universidad del Sur (UDS)</strong>,
+            con más de 5 años de experiencia brindando atención dental integral en Tuxtla Gutiérrez.
+            Me especializo en hacer que cada visita al consultorio sea una experiencia <strong>cómoda,
+            rápida y sin dolor</strong>.
+          </p>
+          <p class="perfil-texto">
+            Sé que para muchas personas visitar al dentista puede generar ansiedad. Por eso mi
+            filosofía es simple: <strong>escucharte, explicarte cada paso y garantizarte el mejor
+            resultado</strong> siempre con calidez humana.
+          </p>
+
+          <ul class="perfil-logros">
+            <li>
+              <span class="logro-icono">🎓</span>
+              <div>
+                <strong>Licenciatura en Cirugía Dental</strong>
+                <span>Universidad del Sur — UDS, Tuxtla Gutiérrez</span>
+              </div>
+            </li>
+            <li>
+              <span class="logro-icono">📜</span>
+              <div>
+                <strong>Cédula Profesional Federal</strong>
+                <span>Registro ante SEP y Secretaría de Salud</span>
+              </div>
+            </li>
+            <li>
+              <span class="logro-icono">🏅</span>
+              <div>
+                <strong>Actualización continua</strong>
+                <span>Cursos y congresos nacionales de odontología</span>
+              </div>
+            </li>
+          </ul>
+
+          <button class="btn-primary" id="btnAgendarPerfil">
+            Agendar mi cita ahora 📅
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SERVICIOS
+  ═══════════════════════════════════════════ -->
+  <section class="servicios" id="servicios">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label">¿Qué ofrecemos?</span>
+        <h2 class="section-title">Nuestros <strong>Servicios Dentales</strong></h2>
+        <p class="section-subtitle">
+          Atención completa para toda la familia, con tecnología moderna y el trato que mereces.
+        </p>
+      </div>
+
+      <div class="servicios-grid">
+
+        <article class="servicio-card reveal" style="--delay: 0.05s">
+          <div class="servicio-icon-wrap aqua">🦷</div>
+          <h3>Limpieza Dental con Ultrasonido</h3>
+          <p>
+            Eliminamos sarro, manchas y bacterias con ultrasonido de última generación.
+            Deja tus dientes brillantes, sanos y con aliento fresco en una sola sesión.
+          </p>
+          <span class="servicio-tag">Preventivo</span>
+        </article>
+
+        <article class="servicio-card reveal" style="--delay: 0.10s">
+          <div class="servicio-icon-wrap gold">✨</div>
+          <h3>Blanqueamiento Dental</h3>
+          <p>
+            Recupera el color natural y la luminosidad de tu sonrisa. Usamos gel
+            profesional de alta concentración para resultados visibles desde la primera cita.
+          </p>
+          <span class="servicio-tag">Estético</span>
+        </article>
+
+        <article class="servicio-card reveal" style="--delay: 0.15s">
+          <div class="servicio-icon-wrap blue">🔧</div>
+          <h3>Ortodoncia (Brackets)</h3>
+          <p>
+            Alineamos tu dentadura de forma precisa con brackets metálicos o estéticos.
+            Tratamiento personalizado para niños, adolescentes y adultos. ¡Nunca es tarde!
+          </p>
+          <span class="servicio-tag">Correctivo</span>
+        </article>
+
+        <article class="servicio-card reveal" style="--delay: 0.20s">
+          <div class="servicio-icon-wrap coral">🩹</div>
+          <h3>Extracciones y Resinas</h3>
+          <p>
+            Extracciones simples y de cordales con anestesia local indolora. Resinas del
+            color de tu diente para restauraciones estéticas que nadie notará.
+          </p>
+          <span class="servicio-tag">Restaurativo</span>
+        </article>
+
+        <article class="servicio-card reveal" style="--delay: 0.25s">
+          <div class="servicio-icon-wrap purple">👦</div>
+          <h3>Odontopediatría</h3>
+          <p>
+            Atención dental especializada y divertida para los más pequeños. Creamos
+            experiencias positivas desde temprana edad para que los niños amen al dentista.
+          </p>
+          <span class="servicio-tag">Infantil</span>
+        </article>
+
+        <article class="servicio-card reveal" style="--delay: 0.30s">
+          <div class="servicio-icon-wrap teal">🚨</div>
+          <h3>Urgencias Dentales</h3>
+          <p>
+            ¿Tienes dolor intenso o un diente roto? Atendemos urgencias dentales a la
+            brevedad posible. Tu alivio no puede esperar. Contáctanos de inmediato.
+          </p>
+          <span class="servicio-tag">Emergencia</span>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       ANTES Y DESPUÉS / GALERÍA
+  ═══════════════════════════════════════════ -->
+  <section class="galeria" id="galeria">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label">Resultados reales</span>
+        <h2 class="section-title">Antes <strong>&amp; Después</strong></h2>
+        <p class="section-subtitle">
+          Los resultados hablan por sí solos. Cada sonrisa es un caso único que tratamos con dedicación.
+        </p>
+      </div>
+
+      <div class="galeria-grid">
+
+        <div class="galeria-card reveal" style="--delay: 0.05s">
+          <div class="galeria-comparacion">
+            <div class="galeria-lado">
+              <span class="lado-label antes">Antes</span>
+              <img src="https://placehold.co/300x260/f0f0f0/999999?text=Antes" alt="Antes - Blanqueamiento" />
+            </div>
+            <div class="galeria-divider">→</div>
+            <div class="galeria-lado">
+              <span class="lado-label despues">Después</span>
+              <img src="https://placehold.co/300x260/CAF0F8/0A3D62?text=Después" alt="Después - Blanqueamiento" />
+            </div>
+          </div>
+          <p class="galeria-desc">Blanqueamiento dental — 1 sesión</p>
+        </div>
+
+        <div class="galeria-card reveal" style="--delay: 0.10s">
+          <div class="galeria-comparacion">
+            <div class="galeria-lado">
+              <span class="lado-label antes">Antes</span>
+              <img src="https://placehold.co/300x260/f0f0f0/999999?text=Antes" alt="Antes - Brackets" />
+            </div>
+            <div class="galeria-divider">→</div>
+            <div class="galeria-lado">
+              <span class="lado-label despues">Después</span>
+              <img src="https://placehold.co/300x260/CAF0F8/0A3D62?text=Después" alt="Después - Brackets" />
+            </div>
+          </div>
+          <p class="galeria-desc">Ortodoncia con brackets — 18 meses</p>
+        </div>
+
+        <div class="galeria-card reveal" style="--delay: 0.15s">
+          <div class="galeria-comparacion">
+            <div class="galeria-lado">
+              <span class="lado-label antes">Antes</span>
+              <img src="https://placehold.co/300x260/f0f0f0/999999?text=Antes" alt="Antes - Resinas" />
+            </div>
+            <div class="galeria-divider">→</div>
+            <div class="galeria-lado">
+              <span class="lado-label despues">Después</span>
+              <img src="https://placehold.co/300x260/CAF0F8/0A3D62?text=Después" alt="Después - Resinas" />
+            </div>
+          </div>
+          <p class="galeria-desc">Restauración con resinas — 1 sesión</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       TESTIMONIOS
+  ═══════════════════════════════════════════ -->
+  <section class="testimonios" id="testimonios">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label">Lo que dicen nuestros pacientes</span>
+        <h2 class="section-title">Testimonios <strong>Reales</strong></h2>
+      </div>
+
+      <div class="testimonios-grid">
+
+        <div class="testimonio-card reveal" style="--delay: 0.05s">
+          <div class="testimonio-estrellas">⭐⭐⭐⭐⭐</div>
+          <p class="testimonio-texto">
+            "Tenía mucho miedo al dentista pero la Dra. Gabriela me hizo sentir tan cómoda
+            que ni me di cuenta cuando terminó mi extracción. ¡Super recomendada!"
+          </p>
+          <div class="testimonio-autor">
+            <img src="https://placehold.co/48x48/CAF0F8/0A3D62?text=MS" alt="María S." class="autor-avatar" />
+            <div>
+              <strong>María Sánchez</strong>
+              <span>Extracción de muela del juicio</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonio-card reveal" style="--delay: 0.10s">
+          <div class="testimonio-estrellas">⭐⭐⭐⭐⭐</div>
+          <p class="testimonio-texto">
+            "Me puse brackets con ella y desde el primer día me explicó todo perfectamente.
+            El seguimiento ha sido impecable. Ya llevo 8 meses y los resultados se notan muchísimo."
+          </p>
+          <div class="testimonio-autor">
+            <img src="https://placehold.co/48x48/CAF0F8/0A3D62?text=AR" alt="Alejandro R." class="autor-avatar" />
+            <div>
+              <strong>Alejandro Ramírez</strong>
+              <span>Ortodoncia con brackets</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonio-card reveal" style="--delay: 0.15s">
+          <div class="testimonio-estrellas">⭐⭐⭐⭐⭐</div>
+          <p class="testimonio-texto">
+            "Llevé a mis dos hijos y quedé encantada. La doctora tiene mucha paciencia con los
+            niños y el consultorio está súper limpio. Definitivamente regresamos."
+          </p>
+          <div class="testimonio-autor">
+            <img src="https://placehold.co/48x48/CAF0F8/0A3D62?text=LP" alt="Laura P." class="autor-avatar" />
+            <div>
+              <strong>Laura Pérez</strong>
+              <span>Limpieza dental infantil</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonio-card reveal" style="--delay: 0.20s">
+          <div class="testimonio-estrellas">⭐⭐⭐⭐⭐</div>
+          <p class="testimonio-texto">
+            "El blanqueamiento quedó increíble, no lo podía creer. Lo pedí antes de mi boda
+            y mis dientes quedaron blancos como nunca. La Dra. es un amor de persona."
+          </p>
+          <div class="testimonio-autor">
+            <img src="https://placehold.co/48x48/CAF0F8/0A3D62?text=CG" alt="Carmen G." class="autor-avatar" />
+            <div>
+              <strong>Carmen García</strong>
+              <span>Blanqueamiento dental</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       CONTACTO
+  ═══════════════════════════════════════════ -->
+  <section class="contacto" id="contacto">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-label">Estamos para ti</span>
+        <h2 class="section-title">Visítanos en <strong>Tuxtla Gutiérrez</strong></h2>
+      </div>
+
+      <div class="contacto-grid reveal">
+
+        <div class="contacto-info">
+          <div class="info-item">
+            <span class="info-icono">📍</span>
+            <div>
+              <strong>Dirección</strong>
+              <span>Tuxtla Gutiérrez, Chiapas<br />(dirección exacta próximamente)</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-icono">📞</span>
+            <div>
+              <strong>Teléfono / WhatsApp</strong>
+              <a href="https://wa.me/529631337896" target="_blank" rel="noopener">963 133 7896</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-icono">🕐</span>
+            <div>
+              <strong>Horario de atención</strong>
+              <span>Lunes a Viernes: 9:00 am – 7:00 pm<br />Sábados: 9:00 am – 2:00 pm</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-icono">💬</span>
+            <div>
+              <strong>WhatsApp directo</strong>
+              <a href="https://wa.me/529631337896?text=¡Hola%2C%20doctora!%20Me%20gustaría%20obtener%20información%20sobre%20sus%20servicios." target="_blank" rel="noopener" class="wa-link">
+                Escribir por WhatsApp →
+              </a>
+            </div>
+          </div>
+
+          <button class="btn-primary mt-2" id="btnAgendarContacto">
+            Agendar mi cita 📅
+          </button>
+        </div>
+
+        <div class="contacto-mapa">
+          <div class="mapa-placeholder">
+            <span class="mapa-icono">🗺️</span>
+            <p>Mapa de ubicación<br /><small>Tuxtla Gutiérrez, Chiapas</small></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="logo-icon">🦷</span>
+        <span>Dra. <strong>Gabriela De Leon Salazar</strong></span>
+        <p>Odontología General · Tuxtla Gutiérrez, Chiapas</p>
+      </div>
+      <div class="footer-links">
+        <a href="#inicio">Inicio</a>
+        <a href="#perfil">Sobre mí</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#testimonios">Testimonios</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Dra. Gabriela De Leon Salazar · Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: AGENDAR CITA
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="citaOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    <div class="modal-box" id="citaModal">
+
+      <button class="modal-close" id="btnCerrarModal" aria-label="Cerrar modal">✕</button>
+
+      <!-- Mascota -->
+      <div class="modal-mascota">
+        <img src="muelita-mascota.png" alt="Muelita mascota" id="mascotaImg" />
+        <div class="mascota-burbuja" id="mascotaBurbuja">
+          ¡Déjanos cuidar tu sonrisa! 😊
+        </div>
+      </div>
+
+      <div class="modal-cuerpo">
+        <h2 class="modal-titulo" id="modalTitulo">Agendar tu Cita 📅</h2>
+        <p class="modal-subtitulo">Llena el formulario y te contactaremos al instante por WhatsApp.</p>
+
+        <form class="cita-form" id="citaForm" novalidate>
+
+          <div class="campo-grupo">
+            <label for="nombrePaciente">👤 Nombre del paciente</label>
+            <input
+              type="text"
+              id="nombrePaciente"
+              placeholder="Ej: Claudia Martínez"
+              autocomplete="name"
+              maxlength="60"
+            />
+            <span class="campo-error" id="errorNombre">Por favor ingresa tu nombre.</span>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="servicioCita">🦷 Servicio de interés</label>
+            <select id="servicioCita">
+              <option value="">— Selecciona un servicio —</option>
+              <option value="Limpieza dental con ultrasonido">🦷 Limpieza Dental con Ultrasonido</option>
+              <option value="Blanqueamiento dental">✨ Blanqueamiento Dental</option>
+              <option value="Ortodoncia (brackets)">🔧 Ortodoncia (Brackets)</option>
+              <option value="Extracción dental">🩹 Extracción Dental</option>
+              <option value="Resinas estéticas">🪥 Resinas Estéticas</option>
+              <option value="Odontopediatría (niños)">👦 Odontopediatría (niños)</option>
+              <option value="Urgencia dental / dolor">🚨 Urgencia Dental / Dolor</option>
+              <option value="Consulta de diagnóstico">📋 Consulta de Diagnóstico</option>
+            </select>
+            <span class="campo-error" id="errorServicio">Por favor selecciona un servicio.</span>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="diaCita">📅 Día de preferencia</label>
+            <input
+              type="text"
+              id="diaCita"
+              placeholder="Ej: Viernes 28 de febrero"
+              maxlength="60"
+            />
+            <span class="campo-error" id="errorDia">Por favor indica el día de tu preferencia.</span>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="horarioCita">🕐 Horario de preferencia</label>
+            <select id="horarioCita">
+              <option value="">— Selecciona un horario —</option>
+              <option value="por la mañana (9:00 – 12:00)">☀️ Mañana (9:00 – 12:00)</option>
+              <option value="a mediodía (12:00 – 15:00)">🌤️ Mediodía (12:00 – 15:00)</option>
+              <option value="por la tarde (15:00 – 19:00)">🌇 Tarde (15:00 – 19:00)</option>
+            </select>
+            <span class="campo-error" id="errorHorario">Por favor elige un horario.</span>
+          </div>
+
+          <button type="submit" class="btn-whatsapp" id="btnConfirmar">
+            <svg viewBox="0 0 24 24" class="wa-icon" aria-hidden="true">
+              <path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path fill="currentColor" d="M12 0C5.373 0 0 5.373 0 12c0 2.123.552 4.117 1.52 5.853L0 24l6.335-1.54A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.37l-.36-.213-3.76.916.964-3.665-.234-.376A9.818 9.818 0 1112 21.818z"/>
+            </svg>
+            Confirmar por WhatsApp
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- WhatsApp flotante -->
+  <a href="https://wa.me/529631337896?text=¡Hola%2C%20doctora!%20Me%20gustaría%20obtener%20información." 
+     class="fab-whatsapp" 
+     target="_blank" 
+     rel="noopener"
+     aria-label="Contactar por WhatsApp">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.123.552 4.117 1.52 5.853L0 24l6.335-1.54A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.37l-.36-.213-3.76.916.964-3.665-.234-.376A9.818 9.818 0 1112 21.818z"/>
+    </svg>
+  </a>
+
+  <script src="script.js"></script>
+</body>
+</html>
