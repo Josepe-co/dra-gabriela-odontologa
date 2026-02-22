@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧪 Modo Prueba — Panel Admin Dra. Gabriela</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <!-- jsPDF para generación de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- SIN Firebase — los datos solo existen en memoria mientras la página está abierta -->
+
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    /* ── Banner modo prueba ─────────────────────── */
+    .banner-prueba {
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: linear-gradient(90deg, #E76F51, #F4A261);
+      color: #fff;
+      text-align: center;
+      padding: 10px 16px;
+      font-size: .84rem;
+      font-weight: 700;
+      font-family: 'Poppins', sans-serif;
+      letter-spacing: .3px;
+      box-shadow: 0 2px 8px rgba(231,111,81,.4);
+    }
+    .banner-prueba span { opacity: .85; font-weight: 400; margin-left: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       BANNER MODO PRUEBA
+  ═══════════════════════════════════════════ -->
+  <div class="banner-prueba">
+    🧪 MODO PRUEBA — Los datos solo existen mientras esta pestaña esté abierta.
+    <span>Al cerrar o recargar la página todo se borrará. No se modifica la base de datos real.</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">🧪</span>
+      <div>
+        <span class="sidebar-title">Modo Prueba</span>
+        <span class="sidebar-sub">Dra. Gabriela De Leon</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="calendario">
+        <span class="nav-icon">📅</span>
+        <span>Calendario</span>
+      </button>
+      <button class="nav-item" data-view="pacientes">
+        <span class="nav-icon">👥</span>
+        <span>Pacientes</span>
+      </button>
+      <button class="nav-item" data-view="ingresos">
+        <span class="nav-icon">💰</span>
+        <span>Ingresos</span>
+      </button>
+      <button class="nav-item" data-view="reportes">
+        <span class="nav-icon">📊</span>
+        <span>Reportes</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="admin.html" class="sidebar-back-link">← Ir al panel real</a>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════
+       TOPBAR MÓVIL
+  ═══════════════════════════════════════════ -->
+  <div class="topbar">
+    <button class="topbar-hamburger" id="topbarHamburger">☰</button>
+    <span>🧪 Modo Prueba</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       CONTENIDO PRINCIPAL
+  ═══════════════════════════════════════════ -->
+  <main class="main-content" id="mainContent">
+
+    <!-- ╔══════════════════════════════════════╗
+         ║   VISTA: CALENDARIO                 ║
+         ╚══════════════════════════════════════╝ -->
+    <section class="view active" id="view-calendario">
+
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Calendario de Citas</h1>
+          <p class="view-subtitle">Selecciona un día para ver o agendar citas</p>
+        </div>
+        <button class="btn-primary" id="btnNuevaCitaTop">+ Nueva Cita</button>
+      </div>
+
+      <!-- Navegación del mes -->
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="calPrev">&#8592;</button>
+        <div class="cal-mes-titulo" id="calMesTitulo">Febrero 2026</div>
+        <button class="cal-nav-btn" id="calNext">&#8594;</button>
+        <button class="btn-hoy" id="btnHoy">Hoy</button>
+        <div class="vista-toggle">
+          <button class="vista-btn active" id="btnVistaMes">Mes</button>
+          <button class="vista-btn" id="btnVistaSemana">Semana</button>
+        </div>
+      </div>
+
+      <!-- Días de la semana -->
+      <div class="cal-semana-header" id="calSemanaHeaderWrap">
+        <span>DOM</span><span>LUN</span><span>MAR</span>
+        <span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span>
+      </div>
+
+      <!-- Grid del calendario -->
+      <div class="cal-grid" id="calGrid"></div>
+
+      <!-- Grid vista semanal (oculto por defecto) -->
+      <div class="semana-grid" id="semanaGrid" style="display:none"></div>
+
+      <!-- Panel lateral del día seleccionado -->
+      <div class="day-panel" id="dayPanel">
+        <div class="day-panel-header">
+          <h3 id="dayPanelTitle">Lunes 21 de febrero</h3>
+          <button class="btn-close-panel" id="btnCloseDayPanel">✕</button>
+        </div>
+        <div class="day-panel-citas" id="dayPanelCitas">
+          <!-- Citas del día se renderizan aquí -->
+        </div>
+        <button class="btn-agendar-dia" id="btnAgendarDia">+ Agendar Cita este día</button>
+      </div>
+
+    </section>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║   VISTA: PACIENTES                  ║
+         ╚══════════════════════════════════════╝ -->
+    <section class="view" id="view-pacientes">
+
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Pacientes</h1>
+          <p class="view-subtitle">Registro de todos los pacientes atendidos</p>
+        </div>
+      </div>
+
+      <div class="search-bar-wrap">
+        <input type="text" id="buscadorPacientes" placeholder="🔍 Buscar por nombre o teléfono..." class="search-input" />
+      </div>
+
+      <div class="pacientes-grid" id="pacientesGrid">
+        <!-- Se renderizan dinámicamente -->
+      </div>
+
+    </section>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║   VISTA: INGRESOS                   ║
+         ╚══════════════════════════════════════╝ -->
+    <section class="view" id="view-ingresos">
+
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Ingresos</h1>
+          <p class="view-subtitle">Control de pagos y ganancias del consultorio</p>
+        </div>
+      </div>
+
+      <div class="ingresos-filtros">
+        <button class="filtro-btn active" data-filtro="dia">Hoy</button>
+        <button class="filtro-btn" data-filtro="semana">Esta semana</button>
+        <button class="filtro-btn" data-filtro="mes">Este mes</button>
+        <input type="date" id="filtroFechaEspecifica" class="filtro-fecha" title="Día específico" />
+      </div>
+
+      <div class="ingresos-resumen">
+        <div class="resumen-card">
+          <span class="resumen-icono">💰</span>
+          <div>
+            <span class="resumen-label">Total del período</span>
+            <span class="resumen-valor" id="ingresoTotal">$0.00</span>
+          </div>
+        </div>
+        <div class="resumen-card">
+          <span class="resumen-icono">📋</span>
+          <div>
+            <span class="resumen-label">Citas cobradas</span>
+            <span class="resumen-valor" id="ingresoCitas">0</span>
+          </div>
+        </div>
+        <div class="resumen-card">
+          <span class="resumen-icono">📈</span>
+          <div>
+            <span class="resumen-label">Promedio por cita</span>
+            <span class="resumen-valor" id="ingresoPromedio">$0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <table class="ingresos-tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Paciente</th>
+            <th>Motivo</th>
+            <th>Monto</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="ingresosTablaBody">
+          <!-- Filas dinámicas -->
+        </tbody>
+      </table>
+
+    </section>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║   VISTA: REPORTES                   ║
+         ╚══════════════════════════════════════╝ -->
+    <section class="view" id="view-reportes">
+
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Reportes Semanales</h1>
+          <p class="view-subtitle">Genera y descarga el reporte PDF de cualquier semana</p>
+        </div>
+      </div>
+
+      <div class="reporte-form-card">
+        <h3>Selecciona la semana</h3>
+        <div class="reporte-opciones">
+          <div class="campo-grupo">
+            <label for="reporteSemana">Semana (Lunes inicio)</label>
+            <input type="week" id="reporteSemana" class="input-field" />
+          </div>
+          <div class="campo-grupo">
+            <label>Incluir en el reporte</label>
+            <div class="check-group">
+              <label class="check-item">
+                <input type="checkbox" id="rIncluirCitas" checked /> Lista de citas
+              </label>
+              <label class="check-item">
+                <input type="checkbox" id="rIncluirIngresos" checked /> Resumen de ingresos
+              </label>
+              <label class="check-item">
+                <input type="checkbox" id="rIncluirNotas" /> Notas clínicas
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="reporte-preview" id="reportePreview">
+          <span class="preview-placeholder">Selecciona una semana para previsualizar el reporte</span>
+        </div>
+
+        <button class="btn-pdf" id="btnGenerarPDF">
+          📄 Generar y Descargar PDF
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: NUEVA CITA
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalNuevaCita">
+    <div class="modal-box modal-grande">
+      <div class="modal-head">
+        <h2 id="modalNuevaCitaTitulo">Nueva Cita</h2>
+        <button class="modal-close" id="btnCerrarNuevaCita">✕</button>
+      </div>
+
+      <form class="cita-form" id="formNuevaCita" novalidate>
+
+        <div class="form-grid-2">
+          <!-- Paciente -->
+          <div class="campo-grupo full-width">
+            <label>👤 Nombre completo del paciente</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="citaPacienteNombre" placeholder="Busca o escribe el nombre..." autocomplete="off" class="input-field" />
+              <ul class="autocomplete-list" id="autocompleteList"></ul>
+            </div>
+          </div>
+
+          <div class="campo-grupo">
+            <label>🎂 Edad</label>
+            <input type="number" id="citaEdad" placeholder="Ej: 28" min="1" max="120" class="input-field" />
+          </div>
+
+          <div class="campo-grupo">
+            <label>📞 Teléfono</label>
+            <input type="tel" id="citaTelefono" placeholder="961 135 4691" class="input-field" />
+          </div>
+
+          <div class="campo-grupo">
+            <label>📅 Fecha</label>
+            <input type="date" id="citaFecha" class="input-field" />
+          </div>
+
+          <div class="campo-grupo">
+            <label>🕐 Hora exacta</label>
+            <input type="time" id="citaHora" class="input-field" />
+          </div>
+
+          <div class="campo-grupo">
+            <label>💰 Precio de consulta ($)</label>
+            <input type="number" id="citaPrecio" placeholder="Ej: 300" min="0" class="input-field" />
+          </div>
+
+          <div class="campo-grupo">
+            <label>🦷 Motivo de la cita</label>
+            <select id="citaMotivo" class="input-field">
+              <option value="">— Selecciona —</option>
+              <option value="Limpieza dental con ultrasonido">🦷 Limpieza Dental con Ultrasonido</option>
+              <option value="Blanqueamiento dental">✨ Blanqueamiento Dental</option>
+              <option value="Ortodoncia (brackets)">🔧 Ortodoncia / Brackets</option>
+              <option value="Extracción dental">🩹 Extracción Dental</option>
+              <option value="Resinas estéticas">🪥 Resinas Estéticas</option>
+              <option value="Odontopediatría">👦 Odontopediatría</option>
+              <option value="Urgencia dental / dolor">🚨 Urgencia Dental / Dolor</option>
+              <option value="Consulta de diagnóstico">📋 Consulta de Diagnóstico</option>
+              <option value="Endodoncia">🔬 Endodoncia</option>
+              <option value="Prótesis dental">🦷 Prótesis Dental</option>
+              <option value="Radiografía dental">🩻 Radiografía Dental</option>
+              <option value="Control de ortodoncia">🔧 Control de Ortodoncia</option>
+            </select>
+          </div>
+
+          <div class="campo-grupo full-width">
+            <label>📝 Notas adicionales (opcional)</label>
+            <textarea id="citaNotas" rows="3" placeholder="Ej: paciente con alergia a la penicilina, viene referida por..." class="input-field textarea-field"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-acciones">
+          <button type="button" class="btn-secundario" id="btnCancelarNuevaCita">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar Cita ✓</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: DETALLE DE CITA
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalDetalleCita">
+    <div class="modal-box modal-extra-grande">
+      <div class="modal-head">
+        <h2 id="detalleTitulo">Detalle de Cita</h2>
+        <button class="modal-close" id="btnCerrarDetalle">✕</button>
+      </div>
+
+      <div class="detalle-layout">
+
+        <!-- Columna izquierda: info + acciones -->
+        <div class="detalle-izq">
+
+          <div class="detalle-info-card" id="detalleInfoCard">
+            <!-- Información se inyecta por JS -->
+          </div>
+
+          <div class="detalle-acciones">
+            <h4>📲 Acciones WhatsApp</h4>
+
+            <button class="btn-wa" id="btnWaConfirmar">
+              <svg viewBox="0 0 24 24" class="wa-ico"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.123.552 4.117 1.52 5.853L0 24l6.335-1.54A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.37l-.36-.213-3.76.916.964-3.665-.234-.376A9.818 9.818 0 1112 21.818z"/></svg>
+              Enviar confirmación de cita
+            </button>
+
+            <button class="btn-wa btn-wa-reminder" id="btnWaRecordatorio">
+              <svg viewBox="0 0 24 24" class="wa-ico"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.123.552 4.117 1.52 5.853L0 24l6.335-1.54A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.37l-.36-.213-3.76.916.964-3.665-.234-.376A9.818 9.818 0 1112 21.818z"/></svg>
+              Enviar recordatorio previo
+            </button>
+
+            <div class="estado-cita-wrap">
+              <label class="estado-label">Estado de la cita</label>
+              <div class="estado-btns">
+                <button class="estado-btn" data-estado="pendiente" id="estadoPendiente">🟡 Pendiente</button>
+                <button class="estado-btn" data-estado="completada" id="estadoCompletada">🟢 Completada</button>
+                <button class="estado-btn" data-estado="cancelada" id="estadoCancelada">🔴 Cancelada</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna derecha: notas + adjuntos -->
+        <div class="detalle-der">
+
+          <div class="notas-clinicas-card">
+            <h4>🩺 Notas Clínicas</h4>
+            <textarea
+              id="notasClinnicas"
+              class="notas-textarea"
+              placeholder="Escribe aquí los detalles técnicos de la cita: procedimiento realizado, observaciones, seguimiento recomendado..."
+              rows="6"
+            ></textarea>
+            <button class="btn-guardar-notas" id="btnGuardarNotas">💾 Guardar notas</button>
+          </div>
+
+          <div class="adjuntos-card">
+            <h4>📎 Archivos Adjuntos</h4>
+            <p class="adjuntos-sub">Sube radiografías, fotos o documentos del paciente</p>
+
+            <label class="drop-zone" id="dropZone" for="fileInput">
+              <span class="drop-icono">📁</span>
+              <span>Arrastra archivos aquí o haz clic para seleccionar</span>
+              <span class="drop-tipos">Imágenes, PDF, Word</span>
+              <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx" hidden />
+            </label>
+
+            <div class="adjuntos-lista" id="adjuntosLista">
+              <!-- Archivos adjuntos se renderizan aquí -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="detalle-footer">
+        <button class="btn-peligro" id="btnEliminarCita">🗑 Eliminar cita</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: PERFIL DE PACIENTE
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalPaciente">
+    <div class="modal-box modal-grande">
+      <div class="modal-head">
+        <h2 id="pacienteTitulo">Historial del Paciente</h2>
+        <button class="modal-close" id="btnCerrarPaciente">✕</button>
+      </div>
+      <div id="pacienteContenido">
+        <!-- Se inyecta por JS -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast de notificación -->
+  <div class="toast" id="toast">
+    <span id="toastMsg">Guardado correctamente ✓</span>
+  </div>
+
+  <script src="prueba.js"></script>
+</body>
+</html>
