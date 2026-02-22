@@ -759,6 +759,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   line-height: 1.6;
 }
 .info-item a:hover { color: var(--blue); }
+.dir-link {
+  color: var(--blue);
+  font-weight: 500;
+  text-decoration: none;
+  line-height: 1.6;
+}
+.dir-link:hover { color: var(--navy); text-decoration: underline; }
+
 .wa-link {
   color: #25D366;
   font-weight: 600;
@@ -770,7 +778,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   overflow: hidden;
   box-shadow: var(--shadow-md);
 }
-.mapa-placeholder {
+.mapa-link {
   background: linear-gradient(135deg, var(--aqua-faint), var(--aqua-pale));
   height: 360px;
   display: flex;
@@ -780,10 +788,29 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   gap: 12px;
   color: var(--navy);
   text-align: center;
+  text-decoration: none;
+  transition: var(--transition);
+  border-radius: var(--radius);
+}
+.mapa-link:hover {
+  background: linear-gradient(135deg, var(--aqua-pale), var(--aqua-light));
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 .mapa-icono { font-size: 3rem; }
-.mapa-placeholder p  { font-weight: 600; font-size: 1rem; line-height: 1.5; }
-.mapa-placeholder small { font-size: .8rem; color: var(--blue); }
+.mapa-link p  { font-weight: 700; font-size: 1.05rem; line-height: 1.5; margin: 0; }
+.mapa-link small { font-size: .82rem; color: var(--blue); }
+.mapa-cta {
+  margin-top: 8px;
+  padding: 10px 24px;
+  background: var(--navy);
+  color: var(--white);
+  border-radius: 50px;
+  font-size: .85rem;
+  font-weight: 700;
+  transition: var(--transition);
+}
+.mapa-link:hover .mapa-cta { background: var(--blue); }
 
 
 /* ══════════════════════════════════════════════════════════

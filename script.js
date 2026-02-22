@@ -6,7 +6,7 @@
 "use strict";
 
 /* ─── CONFIGURACIÓN ─────────────────────────────────────── */
-const WA_NUMBER = "529631337896"; // Número de WhatsApp (Con código de país)
+const WA_NUMBER = "5219611354691"; // Número de WhatsApp (Con código de país)
 
 
 /* ─── ELEMENTOS DEL DOM ─────────────────────────────────── */

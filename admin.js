@@ -5,30 +5,57 @@
 "use strict";
 
 /* ─── NÚMERO DE WHATSAPP DE LA DOCTORA ──────────────────── */
-const DOCTOR_WA = "529631337896";
+const DOCTOR_WA = "5219611354691";
 
 /* ═══════════════════════════════════════════════════════════
-   PERSISTENCIA — LocalStorage helpers
+   FIREBASE — Base de datos en la nube (Firestore)
+   La configuración se encuentra en admin.html
 ═══════════════════════════════════════════════════════════ */
-const LS = {
-  get: (key, fallback = []) => {
-    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-    catch { return fallback; }
-  },
-  set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
-};
-
-const KEYS = { CITAS: "gab_citas", PACIENTES: "gab_pacientes" };
+const db           = firebase.firestore();
+const colCitas     = db.collection("citas");
+const colPacientes = db.collection("pacientes");
 
 /* ─── UUID simple ────────────────────────────────────────── */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-/* ─── Datos reactivos en memoria ────────────────────────── */
-let citas     = LS.get(KEYS.CITAS,     []);
-let pacientes = LS.get(KEYS.PACIENTES, []);
+/* ─── Datos reactivos en memoria (sincronizados vía onSnapshot) ─ */
+let citas     = [];
+let pacientes = [];
 
-function guardarCitas()     { LS.set(KEYS.CITAS,     citas);     }
-function guardarPacientes() { LS.set(KEYS.PACIENTES, pacientes); }
+/* ─── Ayudantes Firestore ────────────────────────────────── */
+function _saveCita(cita) {
+  const { id, ...data } = cita;
+  colCitas.doc(id).set(data).catch(e => console.error("Error guardando cita:", e));
+}
+function _updateCita(id, fields) {
+  colCitas.doc(id).update(fields).catch(e => console.error("Error actualizando cita:", e));
+}
+function _deleteCita(id) {
+  colCitas.doc(id).delete().catch(e => console.error("Error eliminando cita:", e));
+}
+function _savePaciente(pac) {
+  const { id, ...data } = pac;
+  colPacientes.doc(id).set(data).catch(e => console.error("Error guardando paciente:", e));
+}
+
+/* ─── Escucha en tiempo real — CITAS ────────────────────── */
+colCitas.onSnapshot(snap => {
+  citas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (document.getElementById("view-calendario").classList.contains("active")) {
+    if (typeof vistaCalendario !== "undefined" && vistaCalendario === "semana") renderSemana();
+    else renderCalendario();
+    if (dayPanel.classList.contains("open") && selectedDate) abrirDayPanel(selectedDate);
+  }
+  if (document.getElementById("view-ingresos").classList.contains("active")) {
+    renderIngresos(typeof filtroIngresosActivo !== "undefined" ? filtroIngresosActivo : "dia");
+  }
+}, err => console.error("Error escuchando citas:", err));
+
+/* ─── Escucha en tiempo real — PACIENTES ────────────────── */
+colPacientes.onSnapshot(snap => {
+  pacientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (document.getElementById("view-pacientes").classList.contains("active")) renderPacientes();
+}, err => console.error("Error escuchando pacientes:", err));
 
 /* ═══════════════════════════════════════════════════════════
    CALENDARIO — Estado
@@ -46,6 +73,11 @@ const MESES_ES = [
 const DIAS_ES_LARGO = [
   "domingo","lunes","martes","miércoles","jueves","viernes","sábado"
 ];
+const DIAS_ES_SEMANA = ["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"];
+
+/* ─ Vista del calendario ─ */
+let vistaCalendario = "mes"; // "mes" | "semana"
+let semanaActual    = new Date(); // cualquier día de la semana a mostrar
 
 /* ═══════════════════════════════════════════════════════════
    TOAST
@@ -89,9 +121,12 @@ document.getElementById("topbarHamburger").addEventListener("click", () => {
 });
 
 
-/* ═══════════════════════════════════════════════════════════
-   CALENDARIO — Renderizado
-═══════════════════════════════════════════════════════════ */
+/* ─ Renderiza la vista activa (mes o semana) ─────────────── */
+function reRenderCalendario() {
+  if (vistaCalendario === "semana") renderSemana(); else renderCalendario();
+}
+
+/* ─ Renderizado ─────────────────────────────────── */
 function renderCalendario() {
   const grid     = document.getElementById("calGrid");
   const titulo   = document.getElementById("calMesTitulo");
@@ -174,25 +209,131 @@ function seleccionarDia(dStr, numDia) {
   abrirDayPanel(dStr);
 }
 
-/* ─ Navegación mes ────────────────────────────────────────── */
+/* ─ Navegación mes/semana ───────────────────────────────── */
 document.getElementById("calPrev").addEventListener("click", () => {
-  calMonth--;
-  if (calMonth < 0) { calMonth = 11; calYear--; }
-  renderCalendario();
+  if (vistaCalendario === "mes") {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendario();
+  } else {
+    semanaActual = new Date(semanaActual);
+    semanaActual.setDate(semanaActual.getDate() - 7);
+    renderSemana();
+  }
 });
 document.getElementById("calNext").addEventListener("click", () => {
-  calMonth++;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  renderCalendario();
+  if (vistaCalendario === "mes") {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendario();
+  } else {
+    semanaActual = new Date(semanaActual);
+    semanaActual.setDate(semanaActual.getDate() + 7);
+    renderSemana();
+  }
 });
 document.getElementById("btnHoy").addEventListener("click", () => {
-  const hoy  = new Date();
-  calYear    = hoy.getFullYear();
-  calMonth   = hoy.getMonth();
+  const hoy    = new Date();
+  calYear      = hoy.getFullYear();
+  calMonth     = hoy.getMonth();
   selectedDate = fechaStr(hoy);
-  renderCalendario();
+  semanaActual = new Date(hoy);
+  if (vistaCalendario === "mes") renderCalendario();
+  else renderSemana();
   abrirDayPanel(selectedDate);
 });
+
+/* ─ Toggle vista mes / semana ───────────────────────────── */
+document.getElementById("btnVistaMes").addEventListener("click", () => {
+  vistaCalendario = "mes";
+  document.getElementById("btnVistaMes").classList.add("active");
+  document.getElementById("btnVistaSemana").classList.remove("active");
+  document.getElementById("calSemanaHeaderWrap").style.display = "";
+  document.getElementById("calGrid").style.display = "";
+  document.getElementById("semanaGrid").style.display = "none";
+  renderCalendario();
+});
+document.getElementById("btnVistaSemana").addEventListener("click", () => {
+  vistaCalendario = "semana";
+  document.getElementById("btnVistaSemana").classList.add("active");
+  document.getElementById("btnVistaMes").classList.remove("active");
+  document.getElementById("calSemanaHeaderWrap").style.display = "none";
+  document.getElementById("calGrid").style.display = "none";
+  document.getElementById("semanaGrid").style.display = "";
+  renderSemana();
+});
+
+
+/* ═══════════════════════════════════════════════════════════
+   VISTA SEMANAL
+═══════════════════════════════════════════════════════════ */
+function renderSemana() {
+  const grid   = document.getElementById("semanaGrid");
+  const titulo = document.getElementById("calMesTitulo");
+  const lunes  = getLunes(semanaActual);
+
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+
+  const mismoMes = lunes.getMonth() === domingo.getMonth();
+  if (mismoMes) {
+    titulo.textContent = `${MESES_ES[lunes.getMonth()]} ${lunes.getFullYear()} · Semana ${getNumeroSemana(lunes)}`;
+  } else {
+    titulo.textContent =
+      `${lunes.getDate()} ${MESES_ES[lunes.getMonth()]} — ${domingo.getDate()} ${MESES_ES[domingo.getMonth()]} ${domingo.getFullYear()}`;
+  }
+
+  grid.innerHTML = "";
+  const hoyStr = fechaStr(new Date());
+
+  for (let i = 0; i < 7; i++) {
+    const dia  = new Date(lunes);
+    dia.setDate(lunes.getDate() + i);
+    const dStr = fechaStr(dia);
+
+    const citasDia = citas
+      .filter(c => c.fecha === dStr)
+      .sort((a, b) => a.hora.localeCompare(b.hora));
+
+    const col = document.createElement("div");
+    col.className = "semana-col" +
+      (dStr === hoyStr      ? " semana-col-hoy"      : "") +
+      (dStr === selectedDate ? " semana-col-selected" : "");
+
+    col.innerHTML = `
+      <div class="semana-col-header">
+        <span class="semana-dia-nombre">${DIAS_ES_SEMANA[i]}</span>
+        <span class="semana-dia-num">${dia.getDate()}</span>
+      </div>
+      <div class="semana-col-citas"></div>
+    `;
+
+    const citasContainer = col.querySelector(".semana-col-citas");
+    if (citasDia.length === 0) {
+      citasContainer.innerHTML = `<div class="semana-sin-citas">Sin citas</div>`;
+    } else {
+      citasDia.forEach(c => {
+        const card = document.createElement("div");
+        card.className = `semana-cita-card ${c.estado || "pendiente"}`;
+        card.innerHTML = `
+          <div class="semana-cita-hora">🕐 ${formatHoraAmPm(c.hora)}</div>
+          <div class="semana-cita-nombre">${c.pacienteNombre.split(" ")[0]}</div>
+          <div class="semana-cita-motivo">${c.motivo}</div>
+        `;
+        card.addEventListener("click", e => { e.stopPropagation(); abrirDetalleCita(c.id); });
+        citasContainer.appendChild(card);
+      });
+    }
+
+    col.addEventListener("click", () => {
+      selectedDate = dStr;
+      renderSemana();
+      abrirDayPanel(dStr);
+    });
+
+    grid.appendChild(col);
+  }
+}
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -240,7 +381,7 @@ function abrirDayPanel(dStr) {
 document.getElementById("btnCloseDayPanel").addEventListener("click", () => {
   dayPanel.classList.remove("open");
   selectedDate = null;
-  renderCalendario();
+  reRenderCalendario();
 });
 
 /* Botón "Agendar cita este día" en el panel */
@@ -352,7 +493,7 @@ document.getElementById("formNuevaCita").addEventListener("submit", e => {
     const idx = citas.findIndex(c => c.id === citaEnEdicion);
     if (idx !== -1) {
       citas[idx] = { ...citas[idx], pacienteNombre: nombre, edad, telefono, fecha, hora, precio: precio || 0, motivo, notas };
-      guardarCitas();
+      _saveCita(citas[idx]);
       showToast("Cita actualizada ✓");
     }
   } else {
@@ -373,31 +514,34 @@ document.getElementById("formNuevaCita").addEventListener("submit", e => {
       creadaEn: new Date().toISOString(),
     };
     citas.push(nuevaCita);
-    guardarCitas();
+    _saveCita(nuevaCita);
     showToast("Cita agendada ✓");
 
     // Abrir detalle inmediatamente
     cerrarModalNuevaCita();
     if (dayPanel.classList.contains("open")) abrirDayPanel(fecha);
-    renderCalendario();
+    reRenderCalendario();
     setTimeout(() => abrirDetalleCita(nuevaCita.id), 300);
     return;
   }
 
   cerrarModalNuevaCita();
   if (dayPanel.classList.contains("open") && selectedDate) abrirDayPanel(selectedDate);
-  renderCalendario();
+  reRenderCalendario();
 });
 
 function upsertPaciente({ nombre, edad, telefono }) {
   const idx = pacientes.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+  let pac;
   if (idx !== -1) {
     if (edad)     pacientes[idx].edad     = edad;
     if (telefono) pacientes[idx].telefono = telefono;
+    pac = pacientes[idx];
   } else {
-    pacientes.push({ id: uid(), nombre, edad: edad || null, telefono: telefono || null, creadoEn: new Date().toISOString() });
+    pac = { id: uid(), nombre, edad: edad || null, telefono: telefono || null, creadoEn: new Date().toISOString() };
+    pacientes.push(pac);
   }
-  guardarPacientes();
+  _savePaciente(pac);
 }
 
 
@@ -446,7 +590,7 @@ function abrirDetalleCita(citaId) {
     const idx = citas.findIndex(c => c.id === citaId);
     if (idx !== -1) {
       citas[idx].notasClinnicas = document.getElementById("notasClinnicas").value;
-      guardarCitas();
+      _updateCita(citaId, { notasClinnicas: citas[idx].notasClinnicas });
       showToast("Notas clínicas guardadas 💾");
     }
   };
@@ -458,10 +602,10 @@ function abrirDetalleCita(citaId) {
       const idx = citas.findIndex(c => c.id === citaId);
       if (idx !== -1) {
         citas[idx].estado = nuevoEstado;
-        guardarCitas();
+        _updateCita(citaId, { estado: nuevoEstado });
         actualizarBotonesEstado(nuevoEstado);
         if (dayPanel.classList.contains("open") && selectedDate) abrirDayPanel(selectedDate);
-        renderCalendario();
+        reRenderCalendario();
         showToast(`Estado actualizado: ${nuevoEstado} ✓`);
       }
     };
@@ -471,10 +615,10 @@ function abrirDetalleCita(citaId) {
   document.getElementById("btnEliminarCita").onclick = () => {
     if (!confirm(`¿Eliminar la cita de ${cita.pacienteNombre}?\nEsta acción no se puede deshacer.`)) return;
     citas = citas.filter(c => c.id !== citaId);
-    guardarCitas();
+    _deleteCita(citaId);
     cerrarModalDetalle();
     if (dayPanel.classList.contains("open") && selectedDate) abrirDayPanel(selectedDate);
-    renderCalendario();
+    reRenderCalendario();
     showToast("Cita eliminada 🗑");
   };
 
@@ -510,14 +654,17 @@ function enviarWaConfirmacion(cita) {
   if (!cita.telefono) { alert("Esta cita no tiene número de teléfono registrado."); return; }
 
   const telDest = `52${cita.telefono.replace(/\D/g,"")}`;
-  const msg = `¡Hola, ${cita.pacienteNombre}! 😊\n\n` +
-    `Le escribimos del consultorio de la *Dra. Gabriela De Leon Salazar* para confirmarle que su cita ha sido agendada con éxito.\n\n` +
+  const msg =
+    `¡Hola, ${cita.pacienteNombre}! 😊\n\n` +
+    `Le escribimos del consultorio de la *Dra. Gabriela de León* para confirmarle que su cita ha sido agendada con éxito.\n\n` +
     `📋 *Detalles de su cita:*\n` +
     `📅 Fecha: *${formatFechaLarga(cita.fecha)}*\n` +
-    `🕐 Hora: *${cita.hora}*\n` +
+    `🕐 Hora: *${formatHoraAmPm(cita.hora)}*\n` +
     `🦷 Motivo: *${cita.motivo}*\n` +
-    `📍 Consultorio Dra. Gabriela De Leon Salazar, Tuxtla Gutiérrez, Chiapas\n\n` +
-    `_Por favor, llegue puntual. Si necesita cancelar o reagendar, comuníquese con anticipación._\n\n` +
+    `📍 Consultorio Dra. Gabriela De Leon\n` +
+    `Calle 15pte Nte entre 10ma y 9na Nte #1060A🦷\n\n` +
+    `Tuxtla Gutiérrez, Chiapas\n\n` +
+    `Por favor, llegue puntual. Contamos con 10 min de tolerancia a su favor. Si necesita cancelar o reagendar, comuníquese con anticipación.\n\n` +
     `¡La esperamos! 🦷✨`;
 
   window.open(`https://wa.me/${telDest}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
@@ -527,10 +674,12 @@ function enviarWaRecordatorio(cita) {
   if (!cita.telefono) { alert("Esta cita no tiene número de teléfono registrado."); return; }
 
   const telDest = `52${cita.telefono.replace(/\D/g,"")}`;
-  const msg = `Estimado/a *${cita.pacienteNombre}*, buenos días/tardes. 👋\n\n` +
-    `Le llamamos para *confirmar su cita* del día *${formatFechaLarga(cita.fecha)} a las ${cita.hora}* en el consultorio de la *Dra. Gabriela De Leon Salazar*, para su tratamiento de *${cita.motivo}*.\n\n` +
-    `¿Contamos con su asistencia? Si llegara a tener algún inconveniente, le pedimos nos avise con tiempo para poder reprogramarla.\n\n` +
-    `Gracias, ¡hasta pronto! 🦷`;
+  const msg =
+    `Estimado/a *${cita.pacienteNombre}*, buenos días/tardes. 👋\n\n` +
+    `Le recordamos su cita del día *${formatFechaLarga(cita.fecha)} a las ${formatHoraAmPm(cita.hora)}* en el consultorio de la *Dra. Gabriela De Leon*, para su tratamiento de *${cita.motivo}*.\n\n` +
+    `📍 Calle 15pte Nte entre 10ma y 9na Nte #1060A, Tuxtla Gutiérrez, Chiapas\n\n` +
+    `¿Contamos con su asistencia? Si tuviera algún inconveniente, avísenos con tiempo para reprogramar.\n\n` +
+    `¡Hasta pronto! 🦷`;
 
   window.open(`https://wa.me/${telDest}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
 }
@@ -557,7 +706,7 @@ function manejarArchivos(files, citaId) {
       };
       if (!citas[idx].adjuntos) citas[idx].adjuntos = [];
       citas[idx].adjuntos.push(adjunto);
-      guardarCitas();
+      _updateCita(citaId, { adjuntos: citas[idx].adjuntos });
       renderAdjuntos(citas[idx].adjuntos);
       showToast(`"${file.name}" adjuntado ✓`);
     };
@@ -601,7 +750,7 @@ function renderAdjuntos(adjuntos) {
       const citaIdx = citas.findIndex(c => c.id === citaEnEdicion);
       if (citaIdx === -1) return;
       citas[citaIdx].adjuntos = citas[citaIdx].adjuntos.filter(a => a.id !== adj.id);
-      guardarCitas();
+      _updateCita(citaEnEdicion, { adjuntos: citas[citaIdx].adjuntos });
       renderAdjuntos(citas[citaIdx].adjuntos);
       showToast("Archivo eliminado");
     });
@@ -872,7 +1021,7 @@ function generarPDF() {
   doc.text("Dra. Gabriela De Leon Salazar", 14, 14);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("Odontología General · Tuxtla Gutiérrez, Chiapas · Tel: 963 133 7896", 14, 21);
+  doc.text("Odontología General · Tuxtla Gutiérrez, Chiapas · Tel: 961 135 4691", 14, 21);
   doc.setFontSize(9);
   doc.setTextColor(...AQUA);
   doc.text(`REPORTE SEMANAL · ${formatFechaLarga(inicio)} — ${formatFechaLarga(fin)}`, 14, 29);
@@ -1093,6 +1242,15 @@ function getLunes(d) {
   return lunes;
 }
 
+/* ─── Formato hora 12h AM/PM ─────────────────────────────── */
+function formatHoraAmPm(hora24) {
+  if (!hora24) return hora24 || "";
+  const [h, m] = hora24.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12    = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
 function getNumeroSemana(d) {
   const inicio = new Date(d.getFullYear(), 0, 1);
   const diff   = d - inicio;
@@ -1144,7 +1302,7 @@ document.addEventListener("keydown", e => {
   if (dayPanel.classList.contains("open")) {
     dayPanel.classList.remove("open");
     selectedDate = null;
-    renderCalendario();
+    if (vistaCalendario === "semana") renderSemana(); else renderCalendario();
   }
 });
 

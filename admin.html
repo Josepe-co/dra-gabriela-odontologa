@@ -10,6 +10,27 @@
   <!-- jsPDF para generación de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    /* ⚠️ CONFIGURA AQUI TU PROYECTO FIREBASE
+       1. Ve a https://console.firebase.google.com
+       2. Crea un proyecto (o usa uno existente)
+       3. Agrega una Web App y copia el firebaseConfig
+       4. Reemplaza los valores de abajo con los tuyos ======================= */
+    const firebaseConfig = {
+      apiKey:            "TU_API_KEY",
+      authDomain:        "TU_PROJECT_ID.firebaseapp.com",
+      projectId:         "TU_PROJECT_ID",
+      storageBucket:     "TU_PROJECT_ID.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId:             "TU_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
   <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
@@ -82,16 +103,23 @@
         <div class="cal-mes-titulo" id="calMesTitulo">Febrero 2026</div>
         <button class="cal-nav-btn" id="calNext">&#8594;</button>
         <button class="btn-hoy" id="btnHoy">Hoy</button>
+        <div class="vista-toggle">
+          <button class="vista-btn active" id="btnVistaMes">Mes</button>
+          <button class="vista-btn" id="btnVistaSemana">Semana</button>
+        </div>
       </div>
 
       <!-- Días de la semana -->
-      <div class="cal-semana-header">
+      <div class="cal-semana-header" id="calSemanaHeaderWrap">
         <span>DOM</span><span>LUN</span><span>MAR</span>
         <span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span>
       </div>
 
       <!-- Grid del calendario -->
       <div class="cal-grid" id="calGrid"></div>
+
+      <!-- Grid vista semanal (oculto por defecto) -->
+      <div class="semana-grid" id="semanaGrid" style="display:none"></div>
 
       <!-- Panel lateral del día seleccionado -->
       <div class="day-panel" id="dayPanel">
@@ -267,7 +295,7 @@
 
           <div class="campo-grupo">
             <label>📞 Teléfono</label>
-            <input type="tel" id="citaTelefono" placeholder="963 133 7896" class="input-field" />
+            <input type="tel" id="citaTelefono" placeholder="961 135 4691" class="input-field" />
           </div>
 
           <div class="campo-grupo">
