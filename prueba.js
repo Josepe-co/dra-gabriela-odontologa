@@ -676,8 +676,8 @@ function manejarArchivos(files, citaId) {
       if (!citas[idx].adjuntos) citas[idx].adjuntos = [];
       citas[idx].adjuntos.push(adjunto);
       _updateCita(citaId, { adjuntos: citas[idx].adjuntos });
-      renderAdjuntos(citas[idx].adjuntos);
-      showToast(`"${file.name}" adjuntado ✓`);
+      renderAdjuntos(citas[idx].adjuntos, adjunto.id);
+      showToast(`"${file.name}" adjuntado — ponle un nombre ✏️`);
     };
     reader.readAsDataURL(file);
   });
@@ -685,7 +685,7 @@ function manejarArchivos(files, citaId) {
   document.getElementById("fileInput").value = "";
 }
 
-function renderAdjuntos(adjuntos) {
+function renderAdjuntos(adjuntos, autoRenameId = null) {
   const lista = document.getElementById("adjuntosLista");
   lista.innerHTML = "";
   if (!adjuntos || adjuntos.length === 0) return;
@@ -693,6 +693,7 @@ function renderAdjuntos(adjuntos) {
   adjuntos.forEach(adj => {
     const item = document.createElement("div");
     item.className = "adjunto-item";
+    item.dataset.adjId = adj.id;
 
     const esImagen = adj.tipo.startsWith("image/");
     const icono    = esImagen ? "🖼️" : adj.tipo.includes("pdf") ? "📄" : "📁";
@@ -701,7 +702,10 @@ function renderAdjuntos(adjuntos) {
       ${esImagen
         ? `<img src="${adj.data}" class="adjunto-preview" alt="${adj.nombre}" />`
         : `<span class="adjunto-icono">${icono}</span>`}
-      <span class="adjunto-nombre">${adj.nombre}</span>
+      <div class="adjunto-nombre-wrap">
+        <span class="adjunto-nombre" title="${adj.nombre}">${adj.nombre}</span>
+        <button class="adjunto-rename-btn" title="Renombrar">✏️</button>
+      </div>
       <span class="adjunto-size">${formatBytes(adj.size)}</span>
       <button class="adjunto-btn-del" data-id="${adj.id}" title="Eliminar">✕</button>
     `;
@@ -713,6 +717,14 @@ function renderAdjuntos(adjuntos) {
         abrirLightbox(adj.data, adj.nombre);
       });
     }
+
+    // Renombrar
+    item.querySelector(".adjunto-rename-btn").addEventListener("click", () => {
+      activarRenombre(item, adj, citaEnEdicion);
+    });
+    item.querySelector(".adjunto-nombre").addEventListener("dblclick", () => {
+      activarRenombre(item, adj, citaEnEdicion);
+    });
 
     item.querySelector(".adjunto-btn-del").addEventListener("click", () => {
       if (!citaEnEdicion) return;
@@ -726,6 +738,59 @@ function renderAdjuntos(adjuntos) {
 
     lista.appendChild(item);
   });
+
+  // Auto-activar renombre para archivo recién subido
+  if (autoRenameId) {
+    const targetItem = lista.querySelector(`[data-adj-id="${autoRenameId}"]`);
+    if (targetItem) {
+      const adj = adjuntos.find(a => a.id === autoRenameId);
+      if (adj) activarRenombre(targetItem, adj, citaEnEdicion);
+    }
+  }
+}
+
+function activarRenombre(item, adj, citaId) {
+  const wrap    = item.querySelector(".adjunto-nombre-wrap");
+  const nombreEl = item.querySelector(".adjunto-nombre");
+  const btnEl   = item.querySelector(".adjunto-rename-btn");
+  if (wrap.querySelector(".adjunto-nombre-input")) return; // ya está en edición
+
+  nombreEl.style.display = "none";
+  btnEl.style.display    = "none";
+
+  const input   = document.createElement("input");
+  input.type    = "text";
+  input.className = "adjunto-nombre-input";
+  input.value   = adj.nombre;
+  wrap.appendChild(input);
+  input.focus();
+  // Seleccionar solo el nombre sin extensión
+  const match = adj.nombre.match(/^(.+?)(\.[^.]+)?$/);
+  if (match && match[2]) input.setSelectionRange(0, match[1].length);
+  else input.select();
+
+  const guardar = () => {
+    const nuevoNombre = input.value.trim();
+    if (!nuevoNombre) { input.focus(); return; }
+    if (!citaId) return;
+    const citaIdx = citas.findIndex(c => c.id === citaId);
+    if (citaIdx === -1) return;
+    const adjIdx = citas[citaIdx].adjuntos.findIndex(a => a.id === adj.id);
+    if (adjIdx === -1) return;
+    citas[citaIdx].adjuntos[adjIdx].nombre = nuevoNombre;
+    _updateCita(citaId, { adjuntos: citas[citaIdx].adjuntos });
+    renderAdjuntos(citas[citaIdx].adjuntos);
+    showToast("Nombre actualizado ✓");
+  };
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter")  { e.preventDefault(); guardar(); }
+    if (e.key === "Escape") {
+      const citaIdx = citas.findIndex(c => c.id === citaId);
+      if (citaIdx !== -1) renderAdjuntos(citas[citaIdx].adjuntos);
+    }
+  });
+  input.addEventListener("blur", guardar);
 }
 
 function formatBytes(bytes) {
