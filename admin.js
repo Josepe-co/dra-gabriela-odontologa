@@ -139,7 +139,7 @@ function renderCalendario() {
   const hoyStr     = fechaStr(hoy);
 
   // Celdas de días previos del mes anterior
-  const diasPrevios = (primerDia === 0) ? 6 : primerDia;
+  const diasPrevios = primerDia;
   const diasMesAnt  = new Date(calYear, calMonth, 0).getDate();
   for (let i = diasPrevios - 1; i >= 0; i--) {
     const d   = diasMesAnt - i;
@@ -739,9 +739,9 @@ function renderAdjuntos(adjuntos) {
 
     // Click en imagen para verla
     if (esImagen) {
-      item.querySelector(".adjunto-preview").style.cursor = "pointer";
+      item.querySelector(".adjunto-preview").style.cursor = "zoom-in";
       item.querySelector(".adjunto-preview").addEventListener("click", () => {
-        window.open(adj.data, "_blank");
+        abrirLightbox(adj.data, adj.nombre);
       });
     }
 
@@ -1293,9 +1293,56 @@ function limpiarErroresForm() {
 }
 
 
+/* ─── Lightbox de imágenes ─────────────────────────────── */
+let lbScale = 1;
+const lightboxOverlay = document.getElementById("lightboxOverlay");
+const lightboxImg     = document.getElementById("lightboxImg");
+
+function abrirLightbox(src, nombre) {
+  lightboxImg.src = src;
+  document.getElementById("lbNombre").textContent = nombre || "";
+  lbScale = 1;
+  lightboxImg.style.transform = "scale(1)";
+  lightboxImg.style.cursor = "grab";
+  lightboxOverlay.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function cerrarLightbox() {
+  lightboxOverlay.classList.remove("open");
+  lightboxImg.src = "";
+  document.body.style.overflow = "";
+}
+document.getElementById("lbClose").addEventListener("click", cerrarLightbox);
+document.getElementById("lbZoomIn").addEventListener("click", () => {
+  lbScale = Math.min(lbScale + 0.35, 7);
+  lightboxImg.style.transform = `scale(${lbScale})`;
+});
+document.getElementById("lbZoomOut").addEventListener("click", () => {
+  lbScale = Math.max(lbScale - 0.35, 0.2);
+  lightboxImg.style.transform = `scale(${lbScale})`;
+});
+document.getElementById("lbReset").addEventListener("click", () => {
+  lbScale = 1;
+  lightboxImg.style.transform = "scale(1)";
+});
+lightboxOverlay.addEventListener("click", e => {
+  if (e.target === lightboxOverlay || e.target === document.getElementById("lightboxImgWrap")) {
+    cerrarLightbox();
+  }
+});
+/* Rueda del ratón para zoom */
+document.getElementById("lightboxImgWrap").addEventListener("wheel", e => {
+  e.preventDefault();
+  lbScale = e.deltaY < 0
+    ? Math.min(lbScale + 0.15, 7)
+    : Math.max(lbScale - 0.15, 0.2);
+  lightboxImg.style.transform = `scale(${lbScale})`;
+}, { passive: false });
+
 /* ─── ESC cierra modales ─────────────────────────────────── */
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
+  if (lightboxOverlay.classList.contains("open")) { cerrarLightbox(); return; }
   if (modalDetalle.classList.contains("open"))   { cerrarModalDetalle();   return; }
   if (modalNuevaCita.classList.contains("open")) { cerrarModalNuevaCita(); return; }
   if (modalPaciente.classList.contains("open"))  { cerrarModalPaciente();  return; }
