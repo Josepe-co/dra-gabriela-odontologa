@@ -100,6 +100,12 @@ colListaCompras.onSnapshot(snap => {
   }
 }, err => console.error("Error escuchando lista de compras:", err));
 
+/* ─ Helper logo de doctor ────────────────────────────────── */
+function logoDoctor(perfil) {
+  const src = (perfil || "gabriela") === "christian" ? "logos/lg-cid.png" : "logos/lg-LESA.png";
+  return `<img class="cita-logo-doc" src="${src}" alt="" />`;
+}
+
 /* ═══════════════════════════════════════════════════════════
    CALENDARIO — Estado
 ═══════════════════════════════════════════════════════════ */
@@ -261,7 +267,7 @@ function crearCeldaDia(dia, anio, mes, otroMes) {
   citasDia.slice(0, 2).forEach(c => {
     const b = document.createElement("span");
     b.className = `cita-badge-cal ${c.estado || "pendiente"}`;
-    b.textContent = `${c.hora} ${c.pacienteNombre.split(" ")[0]}`;
+    b.innerHTML = `${logoDoctor(c.perfil)}${c.hora} ${c.pacienteNombre.split(" ")[0]}`;
     badgesEl.appendChild(b);
   });
   if (citasDia.length > 2) {
@@ -387,6 +393,7 @@ function renderSemana() {
         const card = document.createElement("div");
         card.className = `semana-cita-card ${c.estado || "pendiente"}`;
         card.innerHTML = `
+          ${logoDoctor(c.perfil)}
           <div class="semana-cita-hora">🕐 ${formatHoraAmPm(c.hora)}</div>
           <div class="semana-cita-nombre">${c.pacienteNombre.split(" ")[0]}</div>
           <div class="semana-cita-motivo">${c.motivo}</div>
@@ -437,7 +444,7 @@ function abrirDayPanel(dStr) {
       item.className = `cita-panel-item ${c.estado || "pendiente"}`;
       item.innerHTML = `
         <div class="cita-panel-hora">🕐 ${c.hora}</div>
-        <div class="cita-panel-nombre">${c.pacienteNombre}</div>
+        <div class="cita-panel-nombre">${c.pacienteNombre}${logoDoctor(c.perfil)}</div>
         <div class="cita-panel-motivo">🦷 ${c.motivo}</div>
         <div class="cita-panel-precio">💰 $${Number(c.precio).toLocaleString("es-MX")}</div>
       `;
@@ -457,13 +464,40 @@ document.getElementById("btnCloseDayPanel").addEventListener("click", () => {
 
 /* Botón "Agendar cita este día" en el panel */
 document.getElementById("btnAgendarDia").addEventListener("click", () => {
-  abrirModalNuevaCita(selectedDate);
+  abrirSelectorPerfil(selectedDate);
 });
 
 /* Botón "Nueva Cita" en el header */
 document.getElementById("btnNuevaCitaTop").addEventListener("click", () => {
-  abrirModalNuevaCita(null);
+  abrirSelectorPerfil(null);
 });
+
+
+/* ═══════════════════════════════════════════════════════════
+   SELECTOR DE PERFIL (modal previo a nueva cita)
+═══════════════════════════════════════════════════════════ */
+let _fechaParaNuevaCita = null;
+const modalSelPerfil = document.getElementById("modalSeleccionPerfil");
+
+function abrirSelectorPerfil(fecha) {
+  _fechaParaNuevaCita = fecha;
+  modalSelPerfil.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function cerrarSelectorPerfil() {
+  modalSelPerfil.classList.remove("open");
+  document.body.style.overflow = "";
+}
+document.getElementById("btnCerrarSelectorPerfil").addEventListener("click", cerrarSelectorPerfil);
+modalSelPerfil.addEventListener("click", e => { if (e.target === modalSelPerfil) cerrarSelectorPerfil(); });
+document.querySelectorAll(".perfil-sel-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const perfil = btn.dataset.perfil;
+    cerrarSelectorPerfil();
+    abrirModalNuevaCita(_fechaParaNuevaCita, perfil);
+  });
+});
+
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -471,7 +505,7 @@ document.getElementById("btnNuevaCitaTop").addEventListener("click", () => {
 ═══════════════════════════════════════════════════════════ */
 const modalNuevaCita = document.getElementById("modalNuevaCita");
 
-function abrirModalNuevaCita(fechaPrellena) {
+function abrirModalNuevaCita(fechaPrellena, perfilPresel = "gabriela") {
   document.getElementById("formNuevaCita").reset();
   limpiarErroresForm();
 
@@ -484,7 +518,8 @@ function abrirModalNuevaCita(fechaPrellena) {
   document.getElementById("modalNuevaCitaTitulo").textContent = "Nueva Cita";
   citaEnEdicion = null;
   autocompleteList.classList.remove("open");
-  // Resetear visual perfil radio
+  // Resetear visual perfil radio según perfilPresel
+  document.querySelectorAll('input[name="citaPerfil"]').forEach(r => { r.checked = r.value === perfilPresel; });
   document.querySelectorAll('.perfil-cita-label').forEach(l => {
     l.classList.toggle('checked', l.querySelector('input[name="citaPerfil"]').checked);
   });

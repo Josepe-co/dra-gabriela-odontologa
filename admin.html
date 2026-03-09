@@ -232,6 +232,89 @@
       transition: background .2s;
     }
     .btn-lista-del:hover { background: #c0392b; }
+
+    /* ── Logo de doctor en calendario ──────────────────── */
+    .cita-logo-doc {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      object-fit: cover;
+      vertical-align: middle;
+      margin-right: 4px;
+      border: 1.5px solid rgba(255,255,255,.6);
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .semana-cita-card .cita-logo-doc {
+      width: 26px;
+      height: 26px;
+      float: right;
+      margin: 0 0 6px 6px;
+      border-color: #e0ecf2;
+    }
+    .cita-panel-nombre .cita-logo-doc {
+      width: 30px;
+      height: 30px;
+      float: right;
+      margin-left: 8px;
+      border: 2px solid #e0ecf2;
+    }
+
+    /* ── Modal selector de perfil ────────────────────────── */
+    .modal-perfil-sel {
+      max-width: 500px;
+      text-align: center;
+      padding: 36px 32px 28px;
+    }
+    .modal-perfil-sel h2 {
+      font-size: 1.3rem;
+      color: var(--navy, #0a3d62);
+      margin-bottom: 6px;
+    }
+    .perfil-sel-sub {
+      color: #8c99a6;
+      font-size: .88rem;
+      margin-bottom: 28px;
+    }
+    .perfil-sel-options {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .perfil-sel-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 24px 32px;
+      border-radius: 18px;
+      border: 2.5px solid #e0ecf2;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all .22s;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--navy, #0a3d62);
+      line-height: 1.4;
+      min-width: 150px;
+      font-family: inherit;
+    }
+    .perfil-sel-btn img {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #e0ecf2;
+      transition: border-color .22s;
+    }
+    .perfil-sel-btn:hover {
+      border-color: var(--aqua, #00b4d8);
+      background: #eaf9fc;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(0,180,216,.18);
+    }
+    .perfil-sel-btn:hover img { border-color: var(--aqua, #00b4d8); }
   </style>
 </head>
 <body>
@@ -581,6 +664,29 @@
 
   </main>
 
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: SELECTOR DE PERFIL
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalSeleccionPerfil">
+    <div class="modal-box modal-perfil-sel">
+      <div class="modal-head">
+        <h2>¿Quién atiende esta cita?</h2>
+        <button class="modal-close" id="btnCerrarSelectorPerfil">✕</button>
+      </div>
+      <p class="perfil-sel-sub">Elige el doctor que atenderá al paciente para continuar</p>
+      <div class="perfil-sel-options">
+        <button class="perfil-sel-btn" data-perfil="gabriela">
+          <img src="logos/lg-LESA.png" alt="Dra. Gabriela" />
+          <span>Dra. Gabriela<br/>De León Salazar</span>
+        </button>
+        <button class="perfil-sel-btn" data-perfil="christian">
+          <img src="logos/lg-cid.png" alt="Dr. Christian" />
+          <span>Dr. Christian<br/>Cid</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══════════════════════════════════════════
        MODAL: NUEVA CITA
