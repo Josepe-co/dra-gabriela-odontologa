@@ -11,10 +11,14 @@ const DOCTOR_WA = "5219611354691";
    FIREBASE — Base de datos en la nube (Firestore)
    La configuración se encuentra en admin.html
 ═══════════════════════════════════════════════════════════ */
-const db           = firebase.firestore();
-const colCitas     = db.collection("citas");
-const colPacientes = db.collection("pacientes");
-const colGastos    = db.collection("gastos");
+const db             = firebase.firestore();
+const colCitas       = db.collection("citas");
+const colPacientes   = db.collection("pacientes");
+const colGastos      = db.collection("gastos");
+const colListaCompras = db.collection("listaCompras");
+
+/* ─── Perfil activo de finanzas ───────────────────────────── */
+let perfilActivo = "gabriela";
 
 /* ─── UUID simple ────────────────────────────────────────── */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
