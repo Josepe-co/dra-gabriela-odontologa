@@ -132,6 +132,10 @@
         <span class="nav-icon">📊</span>
         <span>Reportes</span>
       </button>
+      <button class="nav-item" data-view="gastos">
+        <span class="nav-icon">💸</span>
+        <span>Gastos</span>
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -274,6 +278,20 @@
             <span class="resumen-valor" id="ingresoPromedio">$0.00</span>
           </div>
         </div>
+        <div class="resumen-card egresos">
+          <span class="resumen-icono">📉</span>
+          <div>
+            <span class="resumen-label">Egresos del período</span>
+            <span class="resumen-valor" id="egresoTotal">$0.00</span>
+          </div>
+        </div>
+        <div class="resumen-card ganancia">
+          <span class="resumen-icono">🏆</span>
+          <div>
+            <span class="resumen-label">Ganancia neta</span>
+            <span class="resumen-valor" id="gananciaNeta">$0.00</span>
+          </div>
+        </div>
       </div>
 
       <table class="ingresos-tabla">
@@ -336,6 +354,60 @@
           📄 Generar y Descargar PDF
         </button>
       </div>
+
+    </section>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║   VISTA: GASTOS DEL CONSULTORIO     ║
+         ╚══════════════════════════════════════╝ -->
+    <section class="view" id="view-gastos">
+
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Gastos del Consultorio</h1>
+          <p class="view-subtitle">Control de egresos generales del consultorio</p>
+        </div>
+        <button class="btn-primary" id="btnNuevoGasto">+ Nuevo Gasto</button>
+      </div>
+
+      <div class="ingresos-filtros">
+        <button class="filtro-btn-g active" data-filtro="dia">Hoy</button>
+        <button class="filtro-btn-g" data-filtro="semana">Esta semana</button>
+        <button class="filtro-btn-g" data-filtro="mes">Este mes</button>
+        <input type="date" id="filtroFechaGasto" class="filtro-fecha" title="Día específico" />
+      </div>
+
+      <div class="ingresos-resumen">
+        <div class="resumen-card egresos">
+          <span class="resumen-icono">💸</span>
+          <div>
+            <span class="resumen-label">Total del período</span>
+            <span class="resumen-valor" id="gastoTotal">$0.00</span>
+          </div>
+        </div>
+        <div class="resumen-card">
+          <span class="resumen-icono">📋</span>
+          <div>
+            <span class="resumen-label">Gastos registrados</span>
+            <span class="resumen-valor" id="gastoConteo">0</span>
+          </div>
+        </div>
+      </div>
+
+      <table class="ingresos-tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            <th>Categoría</th>
+            <th>Monto</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="gastosTablaBody">
+          <!-- Filas dinámicas -->
+        </tbody>
+      </table>
 
     </section>
 
@@ -468,8 +540,19 @@
 
         </div>
 
-        <!-- Columna derecha: notas + adjuntos -->
+          <!-- Columna derecha: gastos + notas + adjuntos -->
         <div class="detalle-der">
+
+          <div class="gastos-cita-card">
+            <h4>💸 Gastos de esta cita</h4>
+            <div class="gastos-cita-lista" id="gastosCitaLista"></div>
+            <div class="gasto-cita-total" id="gastosCitaTotal" style="display:none"></div>
+            <div class="gasto-cita-form">
+              <input type="text" id="gastoCitaDesc" placeholder="Ej: Resinas 3M, Guantes..." />
+              <input type="number" id="gastoCitaMonto" placeholder="$0" min="0" step="0.01" />
+              <button type="button" class="btn-agregar-gasto" id="btnAgregarGastoCita">+ Agregar</button>
+            </div>
+          </div>
 
           <div class="notas-clinicas-card">
             <h4>🩺 Notas Clínicas</h4>
@@ -503,8 +586,57 @@
 
       <div class="detalle-footer">
         <button class="btn-peligro" id="btnEliminarCita">🗑 Eliminar cita</button>
+        <button class="btn-secundario" id="btnEditarCita">✏️ Editar cita</button>
       </div>
 
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: NUEVO / EDITAR GASTO
+  ═══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalGasto">
+    <div class="modal-box modal-grande">
+      <div class="modal-head">
+        <h2 id="modalGastoTitulo">Nuevo Gasto</h2>
+        <button class="modal-close" id="btnCerrarGasto">✕</button>
+      </div>
+      <form class="cita-form" id="formGasto" novalidate>
+        <div class="form-grid-2">
+          <div class="campo-grupo full-width">
+            <label>📝 Descripción</label>
+            <input type="text" id="gastoDescripcion" placeholder="Ej: Resinas 3M, Renta consultorio..." class="input-field" />
+          </div>
+          <div class="campo-grupo">
+            <label>📂 Categoría</label>
+            <select id="gastoCategoria" class="input-field">
+              <option value="Material dental">🦷 Material dental</option>
+              <option value="Equipamiento">🔧 Equipamiento</option>
+              <option value="Servicios">💡 Servicios (luz, agua...)</option>
+              <option value="Renta">🏠 Renta</option>
+              <option value="Administrativo">📄 Administrativo</option>
+              <option value="Otro">📦 Otro</option>
+            </select>
+          </div>
+          <div class="campo-grupo">
+            <label>📅 Fecha</label>
+            <input type="date" id="gastoFecha" class="input-field" />
+          </div>
+          <div class="campo-grupo">
+            <label>💰 Monto ($)</label>
+            <input type="number" id="gastoMonto" placeholder="Ej: 250" min="0" step="0.01" class="input-field" />
+          </div>
+          <div class="campo-grupo full-width">
+            <label>📝 Notas (opcional)</label>
+            <textarea id="gastoNotas" rows="2" class="input-field textarea-field" placeholder="Descripción adicional..."></textarea>
+          </div>
+        </div>
+        <div class="modal-acciones">
+          <button type="button" class="btn-secundario" id="btnCancelarGasto">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar Gasto ✓</button>
+        </div>
+      </form>
     </div>
   </div>
 

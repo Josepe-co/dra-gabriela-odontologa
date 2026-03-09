@@ -1260,6 +1260,175 @@ select.input-field {
 
 
 /* ═══════════════════════════════════════════════════════════
+   GASTOS DE CITA (en el modal de detalle)
+═══════════════════════════════════════════════════════════ */
+.gastos-cita-card {
+  background: var(--white);
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.gastos-cita-card h4 {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+.gastos-cita-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.gasto-cita-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background: var(--off-white);
+  border-radius: 8px;
+  border: 1px solid var(--gray-light);
+  font-size: .83rem;
+}
+.gasto-cita-desc  { flex: 1; color: var(--navy); font-weight: 600; }
+.gasto-cita-monto { color: #c0392b; font-weight: 700; flex-shrink: 0; }
+.gasto-cita-del {
+  color: var(--red);
+  font-size: .78rem;
+  padding: 2px 7px;
+  border-radius: 5px;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.gasto-cita-del:hover { background: rgba(231,76,60,.12); }
+.gasto-cita-total {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #c0392b;
+  text-align: right;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--gray-light);
+}
+.gasto-cita-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.gasto-cita-form input {
+  padding: 8px 11px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: .84rem;
+  outline: none;
+  transition: var(--transition);
+  background: var(--white);
+  color: var(--text);
+  font-family: inherit;
+}
+.gasto-cita-form input:focus { border-color: var(--aqua); }
+.gasto-cita-form input[type="text"]   { flex: 1; min-width: 110px; }
+.gasto-cita-form input[type="number"] { width: 88px; }
+.btn-agregar-gasto {
+  padding: 8px 14px;
+  background: var(--aqua-faint);
+  color: var(--navy);
+  border-radius: var(--radius-sm);
+  font-size: .88rem;
+  font-weight: 700;
+  transition: var(--transition);
+  border: 2px solid var(--aqua-pale);
+  flex-shrink: 0;
+}
+.btn-agregar-gasto:hover { background: var(--aqua); color: var(--white); }
+
+
+/* ═══════════════════════════════════════════════════════════
+   TARJETAS DE EGRESOS / GANANCIA NETA
+═══════════════════════════════════════════════════════════ */
+.resumen-card.egresos { border-left-color: #e74c3c; }
+.resumen-card.ganancia { border-left-color: #27ae60; }
+.resumen-card.egresos  .resumen-valor { color: #e74c3c; }
+.resumen-card.ganancia .resumen-valor { color: #27ae60; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   VISTA GASTOS DEL CONSULTORIO
+═══════════════════════════════════════════════════════════ */
+.filtro-btn-g {
+  padding: 9px 20px;
+  border-radius: 50px;
+  font-size: .84rem;
+  font-weight: 600;
+  background: var(--white);
+  color: var(--gray-dark);
+  border: 2px solid var(--gray-light);
+  transition: var(--transition);
+}
+.filtro-btn-g:hover  { border-color: var(--aqua); color: var(--navy); }
+.filtro-btn-g.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+
+
+/* ═══════════════════════════════════════════════════════════
+   EDITAR PACIENTE (inline en modal de perfil)
+═══════════════════════════════════════════════════════════ */
+.edit-paciente-btn {
+  padding: 7px 16px;
+  background: var(--aqua-faint);
+  color: var(--navy);
+  border-radius: 50px;
+  font-size: .78rem;
+  font-weight: 700;
+  border: 2px solid var(--aqua-pale);
+  transition: var(--transition);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.edit-paciente-btn:hover { background: var(--aqua); color: var(--white); }
+
+.edicion-paciente-form {
+  background: var(--off-white);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.edicion-paciente-form .full-width { grid-column: 1/-1; }
+.edicion-paciente-form .campo-grupo label { font-size: .8rem; }
+.edicion-paciente-acciones {
+  grid-column: 1/-1;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.btn-guardar-paciente {
+  padding: 9px 22px;
+  background: var(--blue);
+  color: var(--white);
+  border-radius: 50px;
+  font-size: .84rem;
+  font-weight: 700;
+  transition: var(--transition);
+  box-shadow: 0 3px 10px rgba(0,119,182,.25);
+}
+.btn-guardar-paciente:hover { background: var(--navy); }
+
+/* Footer detalle: espacio para 2 botones */
+.detalle-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
    TOAST
 ═══════════════════════════════════════════════════════════ */
 .toast {

@@ -14,6 +14,7 @@ const DOCTOR_WA = "5219611354691";
 const db           = firebase.firestore();
 const colCitas     = db.collection("citas");
 const colPacientes = db.collection("pacientes");
+const colGastos    = db.collection("gastos");
 
 /* ─── UUID simple ────────────────────────────────────────── */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -21,6 +22,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 /* ─── Datos reactivos en memoria (sincronizados vía onSnapshot) ─ */
 let citas     = [];
 let pacientes = [];
+let gastos    = [];
 
 /* ─── Ayudantes Firestore ────────────────────────────────── */
 function _saveCita(cita) {
@@ -36,6 +38,16 @@ function _deleteCita(id) {
 function _savePaciente(pac) {
   const { id, ...data } = pac;
   colPacientes.doc(id).set(data).catch(e => console.error("Error guardando paciente:", e));
+}
+function _saveGasto(g) {
+  const { id, ...data } = g;
+  colGastos.doc(id).set(data).catch(e => console.error("Error guardando gasto:", e));
+}
+function _updateGasto(id, fields) {
+  colGastos.doc(id).update(fields).catch(e => console.error("Error actualizando gasto:", e));
+}
+function _deleteGasto(id) {
+  colGastos.doc(id).delete().catch(e => console.error("Error eliminando gasto:", e));
 }
 
 /* ─── Escucha en tiempo real — CITAS ────────────────────── */
@@ -56,6 +68,17 @@ colPacientes.onSnapshot(snap => {
   pacientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   if (document.getElementById("view-pacientes").classList.contains("active")) renderPacientes();
 }, err => console.error("Error escuchando pacientes:", err));
+
+/* ─── Escucha en tiempo real — GASTOS ──────────────────── */
+colGastos.onSnapshot(snap => {
+  gastos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (document.getElementById("view-gastos").classList.contains("active")) {
+    renderGastos(typeof filtroGastosActivo !== "undefined" ? filtroGastosActivo : "dia");
+  }
+  if (document.getElementById("view-ingresos").classList.contains("active")) {
+    renderIngresos(typeof filtroIngresosActivo !== "undefined" ? filtroIngresosActivo : "dia");
+  }
+}, err => console.error("Error escuchando gastos:", err));
 
 /* ═══════════════════════════════════════════════════════════
    CALENDARIO — Estado
@@ -112,6 +135,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
     if (vista === "pacientes")  renderPacientes();
     if (vista === "ingresos")   renderIngresos("dia");
     if (vista === "reportes")   inicializarReportes();
+    if (vista === "gastos")     renderGastos("dia");
   });
 });
 
@@ -581,6 +605,12 @@ function abrirDetalleCita(citaId) {
   // Adjuntos
   renderAdjuntos(cita.adjuntos || []);
 
+  // Gastos de la cita
+  renderGastosCita(cita.gastosCita || [], citaId);
+  document.getElementById("gastoCitaDesc").value  = "";
+  document.getElementById("gastoCitaMonto").value = "";
+  document.getElementById("btnAgregarGastoCita").onclick = () => agregarGastoCita(citaId);
+
   // Botones WhatsApp
   document.getElementById("btnWaConfirmar").onclick   = () => enviarWaConfirmacion(cita);
   document.getElementById("btnWaRecordatorio").onclick = () => enviarWaRecordatorio(cita);
@@ -620,6 +650,12 @@ function abrirDetalleCita(citaId) {
     if (dayPanel.classList.contains("open") && selectedDate) abrirDayPanel(selectedDate);
     reRenderCalendario();
     showToast("Cita eliminada 🗑");
+  };
+
+  // Editar cita
+  document.getElementById("btnEditarCita").onclick = () => {
+    cerrarModalDetalle();
+    setTimeout(() => abrirModalEditarCita(citaId), 200);
   };
 
   // File input
@@ -902,6 +938,7 @@ function abrirPerfilPaciente(pacienteId) {
         ${paciente.telefono ? `<div style="font-size:.85rem;color:var(--gray)">📞 ${paciente.telefono}</div>` : ""}
         <div style="font-size:.85rem;color:var(--mint);font-weight:700;margin-top:4px">💰 Total invertido: $${totalGastado.toLocaleString("es-MX")}</div>
       </div>
+      <button class="edit-paciente-btn" id="btnEditarPaciente">✏️ Editar</button>
     </div>
     <div class="historial-citas-titulo">📋 Historial de citas (${historial.length})</div>
     <div class="historial-lista">`;
@@ -928,6 +965,11 @@ function abrirPerfilPaciente(pacienteId) {
       cerrarModalPaciente();
       setTimeout(() => abrirDetalleCita(item.dataset.id), 200);
     });
+  });
+
+  // Editar paciente
+  document.getElementById("btnEditarPaciente").addEventListener("click", () => {
+    editarPaciente(pacienteId);
   });
 
   modalPaciente.classList.add("open");
@@ -972,9 +1014,38 @@ function renderIngresos(filtro, fechaEspecifica = null) {
   const conteo   = citasFiltradas.length;
   const promedio = conteo > 0 ? total / conteo : 0;
 
-  document.getElementById("ingresoTotal").textContent    = `$${total.toLocaleString("es-MX", {minimumFractionDigits:2})}`;
+  // Egresos: gastos de cita + gastos generales del período
+  const totalEgresosCitas = citasFiltradas.reduce((s, c) =>
+    s + (c.gastosCita || []).reduce((a, g) => a + Number(g.monto || 0), 0), 0);
+
+  let rangoInicio, rangoFin;
+  if (fechaEspecifica) {
+    rangoInicio = rangoFin = fechaEspecifica;
+  } else if (filtro === "dia") {
+    rangoInicio = rangoFin = fechaStr(hoy);
+  } else if (filtro === "semana") {
+    const lunes2  = getLunes(hoy);
+    const domingo2 = new Date(lunes2); domingo2.setDate(lunes2.getDate() + 6);
+    rangoInicio = fechaStr(lunes2);
+    rangoFin    = fechaStr(domingo2);
+  } else if (filtro === "mes") {
+    const mesStr2 = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,"0")}`;
+    rangoInicio = `${mesStr2}-01`;
+    rangoFin    = `${mesStr2}-31`;
+  }
+  const totalGastosGenerales = (gastos || [])
+    .filter(g => rangoInicio && g.fecha >= rangoInicio && g.fecha <= (rangoFin || rangoInicio))
+    .reduce((s, g) => s + Number(g.monto || 0), 0);
+
+  const totalEgresos  = totalEgresosCitas + totalGastosGenerales;
+  const gananciaNeta  = total - totalEgresos;
+  const fmt = n => `$${n.toLocaleString("es-MX", {minimumFractionDigits:2})}`;
+
+  document.getElementById("ingresoTotal").textContent    = fmt(total);
   document.getElementById("ingresoCitas").textContent    = conteo;
-  document.getElementById("ingresoPromedio").textContent = `$${promedio.toLocaleString("es-MX", {minimumFractionDigits:2})}`;
+  document.getElementById("ingresoPromedio").textContent = fmt(promedio);
+  document.getElementById("egresoTotal").textContent     = fmt(totalEgresos);
+  document.getElementById("gananciaNeta").textContent    = fmt(gananciaNeta);
 
   const tbody = document.getElementById("ingresosTablaBody");
   tbody.innerHTML = "";
@@ -1042,6 +1113,15 @@ function actualizarPreviewReporte() {
   const total = citasSemana.reduce((s,c) => s + Number(c.precio||0), 0);
   const completadas = citasSemana.filter(c => c.estado === "completada").length;
 
+  // Egresos del período
+  const egresosCitas = citasSemana.reduce((s,c) =>
+    s + (c.gastosCita||[]).reduce((a,g) => a + Number(g.monto||0), 0), 0);
+  const gastosGenerales = (gastos||[])
+    .filter(g => g.fecha >= inicio && g.fecha <= fin)
+    .reduce((s,g) => s + Number(g.monto||0), 0);
+  const totalEgresos = egresosCitas + gastosGenerales;
+  const ganancia     = total - totalEgresos;
+
   const preview = document.getElementById("reportePreview");
   preview.innerHTML = `
     <div class="preview-contenido">
@@ -1050,6 +1130,8 @@ function actualizarPreviewReporte() {
       <div class="preview-fila"><span>Citas completadas</span><span>${completadas}</span></div>
       <div class="preview-fila"><span>Citas pendientes</span><span>${citasSemana.filter(c=>!c.estado||c.estado==="pendiente").length}</span></div>
       <div class="preview-fila"><span>Ingresos del período</span><span>$${total.toLocaleString("es-MX",{minimumFractionDigits:2})}</span></div>
+      <div class="preview-fila"><span>Egresos del período</span><span style="color:#e74c3c">$${totalEgresos.toLocaleString("es-MX",{minimumFractionDigits:2})}</span></div>
+      <div class="preview-fila"><span>Ganancia neta</span><span style="color:#27ae60;font-weight:800">$${ganancia.toLocaleString("es-MX",{minimumFractionDigits:2})}</span></div>
       <div class="preview-fila"><span>Pacientes únicos</span><span>${new Set(citasSemana.map(c=>c.pacienteNombre)).size}</span></div>
     </div>`;
 }
@@ -1103,6 +1185,14 @@ function generarPDF() {
   const pendientes  = citasSemana.filter(c => !c.estado || c.estado === "pendiente").length;
   const canceladas  = citasSemana.filter(c => c.estado === "cancelada").length;
 
+  const pdfEgresosCitas = citasSemana.reduce((s,c) =>
+    s + (c.gastosCita||[]).reduce((a,g) => a + Number(g.monto||0), 0), 0);
+  const pdfGastosGen = (gastos||[])
+    .filter(g => g.fecha >= inicio && g.fecha <= fin)
+    .reduce((s,g) => s + Number(g.monto||0), 0);
+  const pdfEgresos = pdfEgresosCitas + pdfGastosGen;
+  const pdfGanancia = total - pdfEgresos;
+
   doc.setFillColor(245, 251, 252);
   doc.roundedRect(14, y, 188, 28, 3, 3, "F");
   doc.setDrawColor(...AQUA);
@@ -1111,12 +1201,10 @@ function generarPDF() {
   const bloques = [
     { label: "Total citas", valor: citasSemana.length },
     { label: "Completadas", valor: completadas },
-    { label: "Pendientes",  valor: pendientes },
-    { label: "Canceladas",  valor: canceladas },
     { label: "Ingresos",    valor: `$${total.toLocaleString("es-MX",{minimumFractionDigits:2})}` },
-  ];
-
-  bloques.forEach((b, i) => {
+    { label: "Egresos",     valor: `$${pdfEgresos.toLocaleString("es-MX",{minimumFractionDigits:2})}` },
+    { label: "Ganancia",    valor: `$${pdfGanancia.toLocaleString("es-MX",{minimumFractionDigits:2})}` },
+  ];  bloques.forEach((b, i) => {
     const x = 14 + (188 / bloques.length) * i + (188 / bloques.length) / 2;
     doc.setTextColor(...GRAY);
     doc.setFontSize(7);
@@ -1243,26 +1331,41 @@ function generarPDF() {
     const motivos = {};
     citasSemana.forEach(c => {
       const m = c.motivo;
-      if (!motivos[m]) motivos[m] = { cantidad: 0, total: 0 };
+      if (!motivos[m]) motivos[m] = { cantidad: 0, total: 0, egresos: 0 };
       motivos[m].cantidad++;
       motivos[m].total += Number(c.precio || 0);
+      motivos[m].egresos += (c.gastosCita||[]).reduce((a,g) => a + Number(g.monto||0), 0);
     });
 
     doc.autoTable({
       startY: y,
-      head: [["Servicio", "# Citas", "Total ($)"]],
+      head: [["Servicio", "# Citas", "Ingresos ($)", "Egresos Cita ($)"]],
       body: Object.entries(motivos).map(([m, v]) => [
         m,
         v.cantidad,
         `$${v.total.toLocaleString("es-MX", {minimumFractionDigits: 2})}`,
-      ]).concat([["TOTAL SEMANA", citasSemana.length, `$${total.toLocaleString("es-MX", {minimumFractionDigits:2})}`]]),
+        `$${v.egresos.toLocaleString("es-MX", {minimumFractionDigits: 2})}`,
+      ]).concat([[
+        "RESUMEN DEL PERÍODO",
+        citasSemana.length,
+        `$${total.toLocaleString("es-MX", {minimumFractionDigits:2})}`,
+        `$${pdfEgresos.toLocaleString("es-MX", {minimumFractionDigits:2})}`,
+      ]]),
       headStyles: { fillColor: NAVY, textColor: WHITE, fontSize: 8 },
       bodyStyles: { fontSize: 8, textColor: BLACK },
       alternateRowStyles: { fillColor: [245,251,252] },
-      footStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: "bold" },
       styles: { cellPadding: 3, lineColor: [210,225,235], lineWidth: 0.2 },
-      columnStyles: { 0: {cellWidth: 100}, 1: {cellWidth: 40, halign:"center"}, 2: {cellWidth: 46, halign:"right"} },
+      columnStyles: {
+        0: {cellWidth: 80},
+        1: {cellWidth: 28, halign:"center"},
+        2: {cellWidth: 40, halign:"right"},
+        3: {cellWidth: 40, halign:"right"},
+      },
     });
+
+    const afterY = doc.lastAutoTable.finalY + 6;
+    doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...NAVY);
+    doc.text(`Ganancia Neta: $${pdfGanancia.toLocaleString("es-MX",{minimumFractionDigits:2})}`, 202, afterY, { align:"right" });
   }
 
   /* ── Footer ─────────────────────────────────────────── */
@@ -1358,6 +1461,304 @@ function limpiarErroresForm() {
 }
 
 
+/* ═══════════════════════════════════════════════════════════
+   EDITAR CITA — abre el modal de nueva cita pre-llenado
+═══════════════════════════════════════════════════════════ */
+function abrirModalEditarCita(citaId) {
+  const cita = citas.find(c => c.id === citaId);
+  if (!cita) return;
+
+  // Reutilizamos abrirModalNuevaCita para preparar el formulario
+  abrirModalNuevaCita(cita.fecha);
+
+  // Sobreescribir estado editando
+  citaEnEdicion = citaId;
+  document.getElementById("modalNuevaCitaTitulo").textContent = "✏️ Editar Cita";
+
+  // Llenar campos
+  document.getElementById("citaPacienteNombre").value = cita.pacienteNombre || "";
+  document.getElementById("citaEdad").value           = cita.edad || "";
+  document.getElementById("citaTelefono").value       = cita.telefono || "";
+  document.getElementById("citaFecha").value          = cita.fecha || "";
+  document.getElementById("citaHora").value           = cita.hora || "";
+  document.getElementById("citaPrecio").value         = cita.precio || "";
+  document.getElementById("citaNotas").value          = cita.notas || "";
+
+  // Seleccionar motivo en el <select>
+  const motivoSel = document.getElementById("citaMotivo");
+  for (let i = 0; i < motivoSel.options.length; i++) {
+    if (motivoSel.options[i].value === cita.motivo) {
+      motivoSel.selectedIndex = i;
+      break;
+    }
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   EDITAR PACIENTE — formulario inline en modal de perfil
+═══════════════════════════════════════════════════════════ */
+function editarPaciente(pacienteId) {
+  const pac = pacientes.find(p => p.id === pacienteId);
+  if (!pac) return;
+
+  const contenido = document.getElementById("pacienteContenido");
+  const formHTML = `
+    <div class="edicion-paciente-form">
+      <div class="campo-grupo full-width">
+        <label>👤 Nombre completo</label>
+        <input type="text" id="editPacNombre" class="input-field" value="${pac.nombre || ""}" />
+      </div>
+      <div class="campo-grupo">
+        <label>🎂 Edad</label>
+        <input type="number" id="editPacEdad" class="input-field" value="${pac.edad || ""}" min="1" max="120" />
+      </div>
+      <div class="campo-grupo">
+        <label>📞 Teléfono</label>
+        <input type="tel" id="editPacTel" class="input-field" value="${pac.telefono || ""}" />
+      </div>
+      <div class="edicion-paciente-acciones">
+        <button type="button" class="btn-secundario" id="btnCancelarEditPac">Cancelar</button>
+        <button type="button" class="btn-guardar-paciente" id="btnGuardarEditPac">💾 Guardar cambios</button>
+      </div>
+    </div>`;
+
+  contenido.innerHTML = formHTML;
+
+  document.getElementById("btnCancelarEditPac").onclick = () => {
+    cerrarModalPaciente();
+    setTimeout(() => abrirPerfilPaciente(pacienteId), 200);
+  };
+
+  document.getElementById("btnGuardarEditPac").onclick = () => {
+    const nuevoNombre = document.getElementById("editPacNombre").value.trim();
+    if (!nuevoNombre) { document.getElementById("editPacNombre").classList.add("error"); showToast("Escribe el nombre"); return; }
+
+    const idx = pacientes.findIndex(p => p.id === pacienteId);
+    if (idx === -1) return;
+
+    pacientes[idx].nombre   = nuevoNombre;
+    pacientes[idx].edad     = document.getElementById("editPacEdad").value.trim();
+    pacientes[idx].telefono = document.getElementById("editPacTel").value.trim();
+
+    _savePaciente(pacientes[idx]);
+    showToast("Paciente actualizado ✓");
+    cerrarModalPaciente();
+    setTimeout(() => abrirPerfilPaciente(pacienteId), 300);
+  };
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   GASTOS DE CITA
+═══════════════════════════════════════════════════════════ */
+function renderGastosCita(gastosCita, citaId) {
+  const lista   = document.getElementById("gastosCitaLista");
+  const totalEl = document.getElementById("gastosCitaTotal");
+  lista.innerHTML = "";
+
+  if (!gastosCita || gastosCita.length === 0) {
+    lista.innerHTML = `<div style="font-size:.8rem;color:var(--gray);padding:4px 0">Sin gastos registrados para esta cita</div>`;
+    totalEl.style.display = "none";
+    return;
+  }
+
+  let total = 0;
+  gastosCita.forEach(g => {
+    total += Number(g.monto || 0);
+    const item = document.createElement("div");
+    item.className = "gasto-cita-item";
+    item.innerHTML = `
+      <span class="gasto-cita-desc">${g.descripcion}</span>
+      <span class="gasto-cita-monto">−$${Number(g.monto).toLocaleString("es-MX",{minimumFractionDigits:2})}</span>
+      <button class="gasto-cita-del" data-gcid="${g.id}">✕</button>`;
+    item.querySelector(".gasto-cita-del").addEventListener("click", () => eliminarGastoCita(g.id, citaId));
+    lista.appendChild(item);
+  });
+
+  totalEl.textContent    = `Total gastos cita: −$${total.toLocaleString("es-MX",{minimumFractionDigits:2})}`;
+  totalEl.style.display  = "block";
+}
+
+function agregarGastoCita(citaId) {
+  const desc  = document.getElementById("gastoCitaDesc").value.trim();
+  const monto = parseFloat(document.getElementById("gastoCitaMonto").value);
+  if (!desc)                  { document.getElementById("gastoCitaDesc").classList.add("error");  showToast("Escribe una descripción"); return; }
+  if (isNaN(monto)||monto < 0){ document.getElementById("gastoCitaMonto").classList.add("error"); showToast("Monto inválido"); return; }
+
+  const idx = citas.findIndex(c => c.id === citaId);
+  if (idx === -1) return;
+
+  if (!citas[idx].gastosCita) citas[idx].gastosCita = [];
+  const nuevo = { id: uid(), descripcion: desc, monto };
+  citas[idx].gastosCita.push(nuevo);
+  _updateCita(citaId, { gastosCita: citas[idx].gastosCita });
+  renderGastosCita(citas[idx].gastosCita, citaId);
+  document.getElementById("gastoCitaDesc").value  = "";
+  document.getElementById("gastoCitaMonto").value = "";
+  showToast(`Gasto "${desc}" agregado ✓`);
+}
+
+function eliminarGastoCita(gastoId, citaId) {
+  const idx = citas.findIndex(c => c.id === citaId);
+  if (idx === -1) return;
+  citas[idx].gastosCita = (citas[idx].gastosCita || []).filter(g => g.id !== gastoId);
+  _updateCita(citaId, { gastosCita: citas[idx].gastosCita });
+  renderGastosCita(citas[idx].gastosCita, citaId);
+  showToast("Gasto eliminado");
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   VISTA: GASTOS DEL CONSULTORIO
+═══════════════════════════════════════════════════════════ */
+let filtroGastosActivo = "dia";
+let gastoEnEdicion = null;
+
+function renderGastos(filtro, fechaEspecifica = null) {
+  if (filtro) filtroGastosActivo = filtro;
+  const hoy = new Date();
+  let gastosFiltrados;
+
+  if (fechaEspecifica) {
+    gastosFiltrados = gastos.filter(g => g.fecha === fechaEspecifica);
+  } else if (filtroGastosActivo === "dia") {
+    const hoyStr = fechaStr(hoy);
+    gastosFiltrados = gastos.filter(g => g.fecha === hoyStr);
+  } else if (filtroGastosActivo === "semana") {
+    const lunes   = getLunes(hoy);
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+    gastosFiltrados = gastos.filter(g => g.fecha >= fechaStr(lunes) && g.fecha <= fechaStr(domingo));
+  } else if (filtroGastosActivo === "mes") {
+    const mesStr = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,"0")}`;
+    gastosFiltrados = gastos.filter(g => g.fecha.startsWith(mesStr));
+  } else {
+    gastosFiltrados = [...gastos];
+  }
+
+  gastosFiltrados = (gastosFiltrados || []).sort((a,b) => b.fecha.localeCompare(a.fecha));
+
+  const totalG  = gastosFiltrados.reduce((s,g) => s + Number(g.monto || 0), 0);
+  const conteoG = gastosFiltrados.length;
+
+  document.getElementById("gastoTotal").textContent  = `$${totalG.toLocaleString("es-MX",{minimumFractionDigits:2})}`;
+  document.getElementById("gastoConteo").textContent = conteoG;
+
+  const tbody = document.getElementById("gastosTablaBody");
+  tbody.innerHTML = "";
+
+  if (gastosFiltrados.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="tabla-vacia">🔍 No hay gastos en este período</td></tr>`;
+    return;
+  }
+
+  gastosFiltrados.forEach(g => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${formatFechaLarga(g.fecha)}</td>
+      <td style="font-weight:600">${g.descripcion}</td>
+      <td><span class="estado-chip pendiente">${g.categoria || "Otro"}</span></td>
+      <td style="font-weight:700;color:#e74c3c">−$${Number(g.monto).toLocaleString("es-MX",{minimumFractionDigits:2})}</td>
+      <td>
+        <button class="btn-guardar-notas" data-gid="${g.id}" style="margin:0;padding:6px 12px;font-size:.78rem">✏️</button>
+        <button class="adjunto-btn-del" data-gid-del="${g.id}" style="margin-left:4px">✕</button>
+      </td>`;
+    tr.querySelector(`[data-gid="${g.id}"]`).addEventListener("click", () => abrirModalGasto(g.id));
+    tr.querySelector(`[data-gid-del="${g.id}"]`).addEventListener("click", () => {
+      if (!confirm(`¿Eliminar el gasto "${g.descripcion}"?`)) return;
+      gastos = gastos.filter(x => x.id !== g.id);
+      _deleteGasto(g.id);
+      renderGastos();
+      showToast("Gasto eliminado 🗑");
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+/* Botones de filtro de gastos */
+document.querySelectorAll(".filtro-btn-g").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filtro-btn-g").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("filtroFechaGasto").value = "";
+    renderGastos(btn.dataset.filtro);
+  });
+});
+
+document.getElementById("filtroFechaGasto").addEventListener("change", e => {
+  if (!e.target.value) return;
+  document.querySelectorAll(".filtro-btn-g").forEach(b => b.classList.remove("active"));
+  renderGastos(null, e.target.value);
+});
+
+document.getElementById("btnNuevoGasto").addEventListener("click", () => abrirModalGasto(null));
+
+const modalGasto = document.getElementById("modalGasto");
+
+function abrirModalGasto(gastoId) {
+  gastoEnEdicion = gastoId;
+  const hoy = fechaStr(new Date());
+
+  if (gastoId) {
+    const g = gastos.find(x => x.id === gastoId);
+    if (!g) return;
+    document.getElementById("modalGastoTitulo").textContent = "✏️ Editar Gasto";
+    document.getElementById("gastoDescripcion").value       = g.descripcion || "";
+    document.getElementById("gastoCategoria").value         = g.categoria   || "Otro";
+    document.getElementById("gastoFecha").value             = g.fecha       || hoy;
+    document.getElementById("gastoMonto").value             = g.monto       || "";
+    document.getElementById("gastoNotas").value             = g.notas       || "";
+  } else {
+    document.getElementById("modalGastoTitulo").textContent = "💸 Nuevo Gasto";
+    document.getElementById("formGasto").reset();
+    document.getElementById("gastoFecha").value = hoy;
+  }
+
+  modalGasto.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function cerrarModalGasto() {
+  modalGasto.classList.remove("open");
+  document.body.style.overflow = "";
+  gastoEnEdicion = null;
+}
+
+document.getElementById("btnCerrarGasto").addEventListener("click",   cerrarModalGasto);
+document.getElementById("btnCancelarGasto").addEventListener("click",  cerrarModalGasto);
+modalGasto.addEventListener("click", e => { if (e.target === modalGasto) cerrarModalGasto(); });
+
+document.getElementById("formGasto").addEventListener("submit", e => {
+  e.preventDefault();
+  const desc  = document.getElementById("gastoDescripcion").value.trim();
+  const categ = document.getElementById("gastoCategoria").value;
+  const fecha = document.getElementById("gastoFecha").value;
+  const monto = parseFloat(document.getElementById("gastoMonto").value);
+  const notas = document.getElementById("gastoNotas").value.trim();
+
+  if (!desc)                   { marcarError("gastoDescripcion"); showToast("Escribe una descripción"); return; }
+  if (!fecha)                  { marcarError("gastoFecha");       showToast("Selecciona una fecha");    return; }
+  if (isNaN(monto)||monto < 0) { marcarError("gastoMonto");       showToast("Monto inválido");          return; }
+
+  if (gastoEnEdicion) {
+    const idx = gastos.findIndex(g => g.id === gastoEnEdicion);
+    if (idx !== -1) {
+      Object.assign(gastos[idx], { descripcion: desc, categoria: categ, fecha, monto, notas });
+      _updateGasto(gastoEnEdicion, { descripcion: desc, categoria: categ, fecha, monto, notas });
+      showToast("Gasto actualizado ✓");
+    }
+  } else {
+    const nuevo = { id: uid(), descripcion: desc, categoria: categ, fecha, monto, notas, creadoEn: new Date().toISOString() };
+    gastos.push(nuevo);
+    _saveGasto(nuevo);
+    showToast(`Gasto "${desc}" registrado ✓`);
+  }
+
+  cerrarModalGasto();
+  if (document.getElementById("view-gastos").classList.contains("active")) renderGastos();
+});
+
+
 /* ─── Lightbox de imágenes ─────────────────────────────── */
 let lbScale = 1;
 const lightboxOverlay = document.getElementById("lightboxOverlay");
@@ -1408,9 +1809,10 @@ document.getElementById("lightboxImgWrap").addEventListener("wheel", e => {
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if (lightboxOverlay.classList.contains("open")) { cerrarLightbox(); return; }
-  if (modalDetalle.classList.contains("open"))   { cerrarModalDetalle();   return; }
-  if (modalNuevaCita.classList.contains("open")) { cerrarModalNuevaCita(); return; }
-  if (modalPaciente.classList.contains("open"))  { cerrarModalPaciente();  return; }
+  if (modalGasto.classList.contains("open"))      { cerrarModalGasto();    return; }
+  if (modalDetalle.classList.contains("open"))    { cerrarModalDetalle();  return; }
+  if (modalNuevaCita.classList.contains("open"))  { cerrarModalNuevaCita(); return; }
+  if (modalPaciente.classList.contains("open"))   { cerrarModalPaciente(); return; }
   if (dayPanel.classList.contains("open")) {
     dayPanel.classList.remove("open");
     selectedDate = null;
