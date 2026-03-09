@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🧪 Modo Prueba — Panel Admin Agendas</title>
+  <title>Panel Admin — Dr. Christian Cid</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
@@ -11,27 +11,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- SIN Firebase — los datos solo existen en memoria mientras la página está abierta -->
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    /* ── FIREBASE CONFIG — mismo proyecto, colecciones separadas para Dr. Christian ── */
+    const firebaseConfig = {
+      apiKey:            "AIzaSyBkmvG2INl1xXoTri7s2dzL0sfZ_UrAgEI",
+      authDomain:        "dra-gabriela-odontologa.firebaseapp.com",
+      projectId:         "dra-gabriela-odontologa",
+      storageBucket:     "dra-gabriela-odontologa.firebasestorage.app",
+      messagingSenderId: "717516896202",
+      appId:             "1:717516896202:web:ceb8208b746d77690c4133"
+    };
+    /* Inicializa una segunda app con nombre único para no colisionar con Dra. Gabriela */
+    const appChristian = firebase.initializeApp(firebaseConfig, "christian");
+  </script>
 
   <link rel="stylesheet" href="admin.css" />
   <style>
-    /* ── Banner modo prueba ─────────────────────── */
-    .banner-prueba {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: linear-gradient(90deg, #E76F51, #F4A261);
-      color: #fff;
-      text-align: center;
-      padding: 10px 16px;
-      font-size: .84rem;
-      font-weight: 700;
-      font-family: 'Poppins', sans-serif;
-      letter-spacing: .3px;
-      box-shadow: 0 2px 8px rgba(231,111,81,.4);
-    }
-    .banner-prueba span { opacity: .85; font-weight: 400; margin-left: 6px; }
-
     /* ── Lightbox de imágenes ────────────────────────── */
     .lightbox-overlay {
       display: none;
@@ -108,10 +106,10 @@
   ═══════════════════════════════════════════ -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <span class="sidebar-logo">🧪</span>
+      <span class="sidebar-logo">🦷</span>
       <div>
-        <span class="sidebar-title">Modo Prueba</span>
-        <span class="sidebar-sub">Dra. Gabriela De Leon</span>
+        <span class="sidebar-title">Panel Admin</span>
+        <span class="sidebar-sub">Dr. Christian Cid</span>
       </div>
     </div>
 
@@ -139,7 +137,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <a href="admin.html" class="sidebar-back-link">← Ir al panel real</a>
+      <a href="index.html" class="sidebar-back-link">← Volver al sitio web</a>
     </div>
   </aside>
 
@@ -148,21 +146,13 @@
   ═══════════════════════════════════════════ -->
   <div class="topbar">
     <button class="topbar-hamburger" id="topbarHamburger">☰</button>
-    <span>🧪 Modo Prueba</span>
+    <span>🦷 Panel Admin — Dr. Christian Cid</span>
   </div>
 
   <!-- ═══════════════════════════════════════════
        CONTENIDO PRINCIPAL
   ═══════════════════════════════════════════ -->
   <main class="main-content" id="mainContent">
-
-    <!-- ═══════════════════════════════════════════
-         BANNER MODO PRUEBA
-    ═══════════════════════════════════════════ -->
-    <div class="banner-prueba">
-      🧪 MODO PRUEBA — Los datos solo existen mientras esta pestaña esté abierta.
-      <span>Al cerrar o recargar la página todo se borrará. No se modifica la base de datos real.</span>
-    </div>
 
     <!-- ╔══════════════════════════════════════╗
          ║   VISTA: CALENDARIO                 ║
@@ -177,7 +167,6 @@
         <button class="btn-primary" id="btnNuevaCitaTop">+ Nueva Cita</button>
       </div>
 
-      <!-- Navegación del mes -->
       <div class="cal-nav">
         <button class="cal-nav-btn" id="calPrev">&#8592;</button>
         <div class="cal-mes-titulo" id="calMesTitulo">Febrero 2026</div>
@@ -189,27 +178,20 @@
         </div>
       </div>
 
-      <!-- Días de la semana -->
       <div class="cal-semana-header" id="calSemanaHeaderWrap">
         <span>DOM</span><span>LUN</span><span>MAR</span>
         <span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span>
       </div>
 
-      <!-- Grid del calendario -->
       <div class="cal-grid" id="calGrid"></div>
-
-      <!-- Grid vista semanal (oculto por defecto) -->
       <div class="semana-grid" id="semanaGrid" style="display:none"></div>
 
-      <!-- Panel lateral del día seleccionado -->
       <div class="day-panel" id="dayPanel">
         <div class="day-panel-header">
           <h3 id="dayPanelTitle">Lunes 21 de febrero</h3>
           <button class="btn-close-panel" id="btnCloseDayPanel">✕</button>
         </div>
-        <div class="day-panel-citas" id="dayPanelCitas">
-          <!-- Citas del día se renderizan aquí -->
-        </div>
+        <div class="day-panel-citas" id="dayPanelCitas"></div>
         <button class="btn-agendar-dia" id="btnAgendarDia">+ Agendar Cita este día</button>
       </div>
 
@@ -231,9 +213,7 @@
         <input type="text" id="buscadorPacientes" placeholder="🔍 Buscar por nombre o teléfono..." class="search-input" />
       </div>
 
-      <div class="pacientes-grid" id="pacientesGrid">
-        <!-- Se renderizan dinámicamente -->
-      </div>
+      <div class="pacientes-grid" id="pacientesGrid"></div>
 
     </section>
 
@@ -304,9 +284,7 @@
             <th>Estado</th>
           </tr>
         </thead>
-        <tbody id="ingresosTablaBody">
-          <!-- Filas dinámicas -->
-        </tbody>
+        <tbody id="ingresosTablaBody"></tbody>
       </table>
 
     </section>
@@ -404,9 +382,7 @@
             <th>Acciones</th>
           </tr>
         </thead>
-        <tbody id="gastosTablaBody">
-          <!-- Filas dinámicas -->
-        </tbody>
+        <tbody id="gastosTablaBody"></tbody>
       </table>
 
     </section>
@@ -427,7 +403,6 @@
       <form class="cita-form" id="formNuevaCita" novalidate>
 
         <div class="form-grid-2">
-          <!-- Paciente -->
           <div class="campo-grupo full-width">
             <label>👤 Nombre completo del paciente</label>
             <div class="autocomplete-wrap">
@@ -540,7 +515,7 @@
 
           <div class="campo-grupo full-width">
             <label>📝 Notas adicionales (opcional)</label>
-            <textarea id="citaNotas" rows="3" placeholder="Ej: paciente con alergia a la penicilina, viene referida por..." class="input-field textarea-field"></textarea>
+            <textarea id="citaNotas" rows="3" placeholder="Ej: paciente con alergia a la penicilina..." class="input-field textarea-field"></textarea>
           </div>
         </div>
 
@@ -566,12 +541,9 @@
 
       <div class="detalle-layout">
 
-        <!-- Columna izquierda: info + acciones -->
         <div class="detalle-izq">
 
-          <div class="detalle-info-card" id="detalleInfoCard">
-            <!-- Información se inyecta por JS -->
-          </div>
+          <div class="detalle-info-card" id="detalleInfoCard"></div>
 
           <div class="detalle-acciones">
             <h4>📲 Acciones WhatsApp</h4>
@@ -598,7 +570,6 @@
 
         </div>
 
-          <!-- Columna derecha: gastos + notas + adjuntos -->
         <div class="detalle-der">
 
           <div class="gastos-cita-card">
@@ -634,9 +605,7 @@
               <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx" hidden />
             </label>
 
-            <div class="adjuntos-lista" id="adjuntosLista">
-              <!-- Archivos adjuntos se renderizan aquí -->
-            </div>
+            <div class="adjuntos-lista" id="adjuntosLista"></div>
           </div>
 
         </div>
@@ -708,9 +677,7 @@
         <h2 id="pacienteTitulo">Historial del Paciente</h2>
         <button class="modal-close" id="btnCerrarPaciente">✕</button>
       </div>
-      <div id="pacienteContenido">
-        <!-- Se inyecta por JS -->
-      </div>
+      <div id="pacienteContenido"></div>
     </div>
   </div>
 
@@ -735,6 +702,6 @@
     <span id="toastMsg">Guardado correctamente ✓</span>
   </div>
 
-  <script src="prueba.js"></script>
+  <script src="Admin2.js"></script>
 </body>
 </html>
