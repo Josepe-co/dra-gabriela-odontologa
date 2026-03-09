@@ -100,6 +100,138 @@
       padding: 6px 0 10px;
       flex-shrink: 0;
     }
+
+    /* ── Perfil Switcher (sidebar) ───────────────────────── */
+    .perfil-switcher {
+      padding: 10px 16px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.09);
+    }
+    .ps-label {
+      font-size: .68rem;
+      color: rgba(255,255,255,.4);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 7px;
+    }
+    .ps-btns { display: flex; gap: 6px; }
+    .ps-btn {
+      flex: 1;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.6);
+      border-radius: 8px;
+      padding: 7px 6px;
+      font-size: .72rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .2s;
+      text-align: center;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+    .ps-btn:hover { background: rgba(255,255,255,.16); color: #fff; }
+    .ps-btn.active {
+      background: var(--aqua, #00b4d8);
+      border-color: var(--aqua, #00b4d8);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* ── Radio de perfil en formulario de cita ──────────── */
+    .perfil-cita-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .perfil-cita-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 2px solid #e0ecf2;
+      cursor: pointer;
+      font-size: .87rem;
+      font-weight: 600;
+      color: var(--navy, #0a3d62);
+      transition: all .2s;
+      flex: 1;
+      min-width: 160px;
+    }
+    .perfil-cita-label:hover { border-color: var(--aqua, #00b4d8); }
+    .perfil-cita-label input { display: none; }
+    .perfil-cita-label.checked {
+      border-color: var(--aqua, #00b4d8);
+      background: linear-gradient(135deg, #e8f7fb, #d0f0f8);
+    }
+
+    /* ── Indicador de perfil en badges del calendario ───── */
+    .cita-badge-cal.perfil-christian {
+      border-left: 3px solid #9b59b6;
+      opacity: .92;
+    }
+
+    /* ── Lista de Compras ─────────────────────────────── */
+    .lista-compras-wrap { max-width: 700px; }
+    .lista-compras-add {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .lista-compras-add .lc-desc { flex: 1; min-width: 200px; }
+    .lista-compras-add .lc-cant { width: 160px; }
+    .lista-compras-add .input-field { margin-bottom: 0; }
+    .lista-item-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border: 1.5px solid #e0ecf2;
+      border-radius: 12px;
+      padding: 13px 16px;
+      margin-bottom: 8px;
+      transition: box-shadow .2s;
+    }
+    .lista-item-card:hover { box-shadow: 0 2px 12px rgba(0,180,216,.12); }
+    .lista-item-desc {
+      flex: 1;
+      font-weight: 600;
+      color: var(--navy, #0a3d62);
+      font-size: .9rem;
+    }
+    .lista-item-cant {
+      font-size: .78rem;
+      color: #fff;
+      background: var(--aqua, #00b4d8);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+    .btn-lista-comprar {
+      background: #27ae60;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: .82rem;
+      font-family: inherit;
+      font-weight: 600;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+    .btn-lista-comprar:hover { background: #1e8449; }
+    .btn-lista-del {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: .82rem;
+      font-family: inherit;
+      font-weight: 700;
+      transition: background .2s;
+    }
+    .btn-lista-del:hover { background: #c0392b; }
   </style>
 </head>
 <body>
@@ -112,7 +244,16 @@
       <span class="sidebar-logo">🦷</span>
       <div>
         <span class="sidebar-title">Panel Admin</span>
-        <span class="sidebar-sub">Dra. Gabriela De Leon</span>
+        <span class="sidebar-sub">Consultorio Dental</span>
+      </div>
+    </div>
+
+    <!-- Selector de perfil (afecta finanzas y reportes) -->
+    <div class="perfil-switcher">
+      <div class="ps-label">Perfil de finanzas</div>
+      <div class="ps-btns">
+        <button class="ps-btn active" data-perfil="gabriela">👩‍⚕️ Dra. Gabriela</button>
+        <button class="ps-btn" data-perfil="christian">👨‍⚕️ Dr. Christian</button>
       </div>
     </div>
 
@@ -136,6 +277,10 @@
       <button class="nav-item" data-view="gastos">
         <span class="nav-icon">💸</span>
         <span>Gastos</span>
+      </button>
+      <button class="nav-item" data-view="lista-compras">
+        <span class="nav-icon">🛒</span>
+        <span>Lista de Compras</span>
       </button>
     </nav>
 
@@ -404,6 +549,36 @@
 
     </section>
 
+    <!-- ╔══════════════════════════════════════╗
+         ║   VISTA: LISTA DE COMPRAS           ║
+         ╚══════════════════════════════════════╝ -->
+    <section class="view" id="view-lista-compras">
+
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Lista de Compras</h1>
+          <p class="view-subtitle">Anota lo que necesitas · ✅ flechita verde = registrar como gasto · ✕ roja = quitar sin cambios económicos</p>
+        </div>
+      </div>
+
+      <div class="lista-compras-wrap">
+        <div class="lista-compras-add">
+          <div class="lc-desc">
+            <input type="text" id="nuevoItemDesc" placeholder="¿Qué necesitas comprar? (Enter para agregar)" class="input-field" />
+          </div>
+          <div class="lc-cant">
+            <input type="number" id="nuevoItemCant" placeholder="Cantidad (opcional)" class="input-field" min="1" step="1" />
+          </div>
+          <button class="btn-primary" id="btnAddItem">+ Agregar</button>
+        </div>
+
+        <div id="listaComprasItems">
+          <!-- Items dinámicos -->
+        </div>
+      </div>
+
+    </section>
+
   </main>
 
 
@@ -420,6 +595,21 @@
       <form class="cita-form" id="formNuevaCita" novalidate>
 
         <div class="form-grid-2">
+          <!-- Doctor / Perfil -->
+          <div class="campo-grupo full-width">
+            <label>👨‍⚕️ Doctor que atiende</label>
+            <div class="perfil-cita-group">
+              <label class="perfil-cita-label checked" id="lblPerfilGabriela">
+                <input type="radio" name="citaPerfil" value="gabriela" checked />
+                👩‍⚕️ Dra. Gabriela De León
+              </label>
+              <label class="perfil-cita-label" id="lblPerfilChristian">
+                <input type="radio" name="citaPerfil" value="christian" />
+                👨‍⚕️ Dr. Christian Cid
+              </label>
+            </div>
+          </div>
+
           <!-- Paciente -->
           <div class="campo-grupo full-width">
             <label>👤 Nombre completo del paciente</label>

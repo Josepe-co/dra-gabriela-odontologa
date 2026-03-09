@@ -20,9 +20,10 @@ const colGastos    = db.collection("gastos");
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 /* ─── Datos reactivos en memoria (sincronizados vía onSnapshot) ─ */
-let citas     = [];
-let pacientes = [];
-let gastos    = [];
+let citas        = [];
+let pacientes    = [];
+let gastos       = [];
+let listaCompras = [];
 
 /* ─── Ayudantes Firestore ────────────────────────────────── */
 function _saveCita(cita) {
@@ -48,6 +49,13 @@ function _updateGasto(id, fields) {
 }
 function _deleteGasto(id) {
   colGastos.doc(id).delete().catch(e => console.error("Error eliminando gasto:", e));
+}
+function _saveListaItem(item) {
+  const { id, ...data } = item;
+  colListaCompras.doc(id).set(data).catch(e => console.error("Error guardando item lista:", e));
+}
+function _deleteListaItem(id) {
+  colListaCompras.doc(id).delete().catch(e => console.error("Error eliminando item lista:", e));
 }
 
 /* ─── Escucha en tiempo real — CITAS ────────────────────── */
@@ -79,6 +87,14 @@ colGastos.onSnapshot(snap => {
     renderIngresos(typeof filtroIngresosActivo !== "undefined" ? filtroIngresosActivo : "dia");
   }
 }, err => console.error("Error escuchando gastos:", err));
+
+/* ─── Escucha en tiempo real — LISTA DE COMPRAS ─────── */
+colListaCompras.onSnapshot(snap => {
+  listaCompras = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (document.getElementById("view-lista-compras").classList.contains("active")) {
+    renderListaCompras();
+  }
+}, err => console.error("Error escuchando lista de compras:", err));
 
 /* ═══════════════════════════════════════════════════════════
    CALENDARIO — Estado
@@ -132,16 +148,43 @@ document.querySelectorAll(".nav-item").forEach(btn => {
     document.getElementById("sidebar").classList.remove("open");
 
     // Renderizar la vista correspondiente
-    if (vista === "pacientes")  renderPacientes();
-    if (vista === "ingresos")   renderIngresos("dia");
-    if (vista === "reportes")   inicializarReportes();
-    if (vista === "gastos")     renderGastos("dia");
+    if (vista === "pacientes")     renderPacientes();
+    if (vista === "ingresos")      renderIngresos("dia");
+    if (vista === "reportes")      inicializarReportes();
+    if (vista === "gastos")        renderGastos("dia");
+    if (vista === "lista-compras") renderListaCompras();
   });
 });
 
 /* Topbar hamburguesa móvil */
 document.getElementById("topbarHamburger").addEventListener("click", () => {
   document.getElementById("sidebar").classList.toggle("open");
+});
+
+/* Perfil switcher (sidebar) */
+document.querySelectorAll(".ps-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".ps-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    perfilActivo = btn.dataset.perfil;
+    const nombre = perfilActivo === "christian" ? "Dr. Christian Cid" : "Dra. Gabriela De León";
+    showToast(`👨‍⚕️ Perfil activo: ${nombre}`);
+    if (document.getElementById("view-ingresos").classList.contains("active"))
+      renderIngresos(filtroIngresosActivo);
+    if (document.getElementById("view-gastos").classList.contains("active"))
+      renderGastos(filtroGastosActivo);
+    if (document.getElementById("view-reportes").classList.contains("active"))
+      inicializarReportes();
+  });
+});
+
+/* Radio "Doctor que atiende" en formulario de cita */
+document.querySelectorAll('input[name="citaPerfil"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    document.querySelectorAll('.perfil-cita-label').forEach(l => {
+      l.classList.toggle('checked', l.querySelector('input[name="citaPerfil"]').checked);
+    });
+  });
 });
 
 
@@ -437,6 +480,10 @@ function abrirModalNuevaCita(fechaPrellena) {
   document.getElementById("modalNuevaCitaTitulo").textContent = "Nueva Cita";
   citaEnEdicion = null;
   autocompleteList.classList.remove("open");
+  // Resetear visual perfil radio
+  document.querySelectorAll('.perfil-cita-label').forEach(l => {
+    l.classList.toggle('checked', l.querySelector('input[name="citaPerfil"]').checked);
+  });
 
   modalNuevaCita.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -499,6 +546,7 @@ document.getElementById("formNuevaCita").addEventListener("submit", e => {
   const precio   = document.getElementById("citaPrecio").value;
   const motivo   = document.getElementById("citaMotivo").value;
   const notas    = document.getElementById("citaNotas").value.trim();
+  const perfil   = (document.querySelector('input[name="citaPerfil"]:checked') || {}).value || "gabriela";
 
   // Validación básica
   let valido = true;
@@ -516,7 +564,7 @@ document.getElementById("formNuevaCita").addEventListener("submit", e => {
     // Editar cita existente
     const idx = citas.findIndex(c => c.id === citaEnEdicion);
     if (idx !== -1) {
-      citas[idx] = { ...citas[idx], pacienteNombre: nombre, edad, telefono, fecha, hora, precio: precio || 0, motivo, notas };
+      citas[idx] = { ...citas[idx], perfil, pacienteNombre: nombre, edad, telefono, fecha, hora, precio: precio || 0, motivo, notas };
       _saveCita(citas[idx]);
       showToast("Cita actualizada ✓");
     }
@@ -524,6 +572,7 @@ document.getElementById("formNuevaCita").addEventListener("submit", e => {
     // Nueva cita
     const nuevaCita = {
       id: uid(),
+      perfil,
       pacienteNombre: nombre,
       edad,
       telefono,
@@ -593,6 +642,7 @@ function abrirDetalleCita(citaId) {
     <div class="detalle-fila"><span class="df-label">🕐 Hora</span><span class="df-val">${cita.hora}</span></div>
     <div class="detalle-fila"><span class="df-label">🦷 Motivo</span><span class="df-val">${cita.motivo}</span></div>
     <div class="detalle-fila"><span class="df-label">💰 Precio</span><span class="df-val">$${Number(cita.precio).toLocaleString("es-MX")}</span></div>
+    <div class="detalle-fila"><span class="df-label">👨‍⚕️ Doctor</span><span class="df-val">${(cita.perfil || "gabriela") === "christian" ? "Dr. Christian Cid" : "Dra. Gabriela De León"}</span></div>
     ${cita.notas ? `<div class="detalle-fila"><span class="df-label">📝 Notas</span><span class="df-val">${cita.notas}</span></div>` : ""}
   `;
 
@@ -710,10 +760,15 @@ function enviarWaRecordatorio(cita) {
   if (!cita.telefono) { alert("Esta cita no tiene número de teléfono registrado."); return; }
 
   const telDest = `52${cita.telefono.replace(/\D/g,"")}`;
+  const esChr   = (cita.perfil || "gabriela") === "christian";
+  const doctorMsg = esChr ? "el *Dr. Christian Cid*" : "la *Dra. Gabriela De Leon*";
+  const dirMsg    = esChr
+    ? ""
+    : "\n📍 Calle 15pte Nte entre 10ma y 9na Nte #1060A, Tuxtla Gutiérrez, Chiapas";
+
   const msg =
     `Estimado/a *${cita.pacienteNombre}*, buenos días/tardes. 👋\n\n` +
-    `Le recordamos su cita del día *${formatFechaLarga(cita.fecha)} a las ${formatHoraAmPm(cita.hora)}* en el consultorio de la *Dra. Gabriela De Leon*, para su tratamiento de *${cita.motivo}*.\n\n` +
-    `📍 Calle 15pte Nte entre 10ma y 9na Nte #1060A, Tuxtla Gutiérrez, Chiapas\n\n` +
+    `Le recordamos su cita del día *${formatFechaLarga(cita.fecha)} a las ${formatHoraAmPm(cita.hora)}* en el consultorio de ${doctorMsg}, para su tratamiento de *${cita.motivo}*.${dirMsg}\n\n` +
     `¿Contamos con su asistencia? Si tuviera algún inconveniente, avísenos con tiempo para reprogramar.\n\n` +
     `¡Hasta pronto! 🦷`;
 
@@ -1008,7 +1063,9 @@ function renderIngresos(filtro, fechaEspecifica = null) {
     citasFiltradas = citas.filter(c => c.fecha.startsWith(mesStr));
   }
 
-  citasFiltradas = (citasFiltradas || []).sort((a,b) => b.fecha.localeCompare(a.fecha) || b.hora.localeCompare(a.hora));
+  citasFiltradas = (citasFiltradas || [])
+    .filter(c => (c.perfil || "gabriela") === perfilActivo)
+    .sort((a,b) => b.fecha.localeCompare(a.fecha) || b.hora.localeCompare(a.hora));
 
   const total    = citasFiltradas.reduce((s, c) => s + Number(c.precio || 0), 0);
   const conteo   = citasFiltradas.length;
@@ -1034,7 +1091,8 @@ function renderIngresos(filtro, fechaEspecifica = null) {
     rangoFin    = `${mesStr2}-31`;
   }
   const totalGastosGenerales = (gastos || [])
-    .filter(g => rangoInicio && g.fecha >= rangoInicio && g.fecha <= (rangoFin || rangoInicio))
+    .filter(g => rangoInicio && g.fecha >= rangoInicio && g.fecha <= (rangoFin || rangoInicio)
+      && (g.perfil || "gabriela") === perfilActivo)
     .reduce((s, g) => s + Number(g.monto || 0), 0);
 
   const totalEgresos  = totalEgresosCitas + totalGastosGenerales;
@@ -1117,15 +1175,16 @@ function actualizarPreviewReporte() {
   const egresosCitas = citasSemana.reduce((s,c) =>
     s + (c.gastosCita||[]).reduce((a,g) => a + Number(g.monto||0), 0), 0);
   const gastosGenerales = (gastos||[])
-    .filter(g => g.fecha >= inicio && g.fecha <= fin)
+    .filter(g => g.fecha >= inicio && g.fecha <= fin && (g.perfil || "gabriela") === perfilActivo)
     .reduce((s,g) => s + Number(g.monto||0), 0);
   const totalEgresos = egresosCitas + gastosGenerales;
   const ganancia     = total - totalEgresos;
 
+  const doctorLabel = perfilActivo === "christian" ? "Dr. Christian Cid" : "Dra. Gabriela De León";
   const preview = document.getElementById("reportePreview");
   preview.innerHTML = `
     <div class="preview-contenido">
-      <div class="preview-titulo">📊 Reporte ${formatFechaLarga(inicio)} — ${formatFechaLarga(fin)}</div>
+      <div class="preview-titulo">📊 ${doctorLabel} · ${formatFechaLarga(inicio)} — ${formatFechaLarga(fin)}</div>
       <div class="preview-fila"><span>Total de citas</span><span>${citasSemana.length}</span></div>
       <div class="preview-fila"><span>Citas completadas</span><span>${completadas}</span></div>
       <div class="preview-fila"><span>Citas pendientes</span><span>${citasSemana.filter(c=>!c.estado||c.estado==="pendiente").length}</span></div>
@@ -1150,6 +1209,16 @@ function generarPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
 
+  /* ── Datos del doctor según perfil ───────────────── */
+  const esChr          = perfilActivo === "christian";
+  const pdfDoctorNombre = esChr ? "Dr. Christian Cid" : "Dra. Gabriela De Leon Salazar";
+  const pdfDoctorInfo   = esChr
+    ? "Odontología General · Tuxtla Gutiérrez, Chiapas"
+    : "Odontología General · Tuxtla Gutiérrez, Chiapas · Tel: 961 135 4691";
+  const pdfFilename    = esChr
+    ? `Reporte_Semana_${semVal}_DrChristian.pdf`
+    : `Reporte_Semana_${semVal}_DraGabriela.pdf`;
+
   const NAVY  = [10, 61, 98];
   const AQUA  = [0, 180, 216];
   const GRAY  = [140, 153, 166];
@@ -1165,10 +1234,10 @@ function generarPDF() {
   doc.setTextColor(...WHITE);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("Dra. Gabriela De Leon Salazar", 14, 14);
+  doc.text(pdfDoctorNombre, 14, 14);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("Odontología General · Tuxtla Gutiérrez, Chiapas · Tel: 961 135 4691", 14, 21);
+  doc.text(pdfDoctorInfo, 14, 21);
   doc.setFontSize(9);
   doc.setTextColor(...AQUA);
   doc.text(`REPORTE SEMANAL · ${formatFechaLarga(inicio)} — ${formatFechaLarga(fin)}`, 14, 29);
@@ -1188,7 +1257,7 @@ function generarPDF() {
   const pdfEgresosCitas = citasSemana.reduce((s,c) =>
     s + (c.gastosCita||[]).reduce((a,g) => a + Number(g.monto||0), 0), 0);
   const pdfGastosGen = (gastos||[])
-    .filter(g => g.fecha >= inicio && g.fecha <= fin)
+    .filter(g => g.fecha >= inicio && g.fecha <= fin && (g.perfil || "gabriela") === perfilActivo)
     .reduce((s,g) => s + Number(g.monto||0), 0);
   const pdfEgresos = pdfEgresosCitas + pdfGastosGen;
   const pdfGanancia = total - pdfEgresos;
@@ -1374,11 +1443,11 @@ function generarPDF() {
     doc.setPage(i);
     doc.setFontSize(7.5);
     doc.setTextColor(...GRAY);
-    doc.text(`Dra. Gabriela De Leon Salazar · Odontología General · Tuxtla Gutiérrez, Chiapas`, 14, 273);
+    doc.text(`${pdfDoctorNombre} · Odontología General · Tuxtla Gutiérrez, Chiapas`, 14, 273);
     doc.text(`Página ${i} de ${pages}`, 202, 273, { align: "right" });
   }
 
-  doc.save(`Reporte_Semana_${semVal}_DraGabriela.pdf`);
+  doc.save(pdfFilename);
   showToast("📄 PDF generado y descargado ✓");
 }
 
@@ -1442,7 +1511,7 @@ function getDatosSemana(semVal) {
   const iStr = fechaStr(lunes);
   const fStr = fechaStr(domingo);
 
-  const citasSemana = citas.filter(c => c.fecha >= iStr && c.fecha <= fStr);
+  const citasSemana = citas.filter(c => c.fecha >= iStr && c.fecha <= fStr && (c.perfil || "gabriela") === perfilActivo);
   return { inicio: iStr, fin: fStr, citasSemana };
 }
 
@@ -1492,6 +1561,15 @@ function abrirModalEditarCita(citaId) {
       break;
     }
   }
+
+  // Perfil radio
+  const perfilVal = cita.perfil || "gabriela";
+  document.querySelectorAll('input[name="citaPerfil"]').forEach(r => {
+    r.checked = r.value === perfilVal;
+  });
+  document.querySelectorAll('.perfil-cita-label').forEach(l => {
+    l.classList.toggle('checked', l.querySelector('input[name="citaPerfil"]').checked);
+  });
 }
 
 
@@ -1614,6 +1692,7 @@ function eliminarGastoCita(gastoId, citaId) {
 ═══════════════════════════════════════════════════════════ */
 let filtroGastosActivo = "dia";
 let gastoEnEdicion = null;
+let listaItemPendienteId = null;
 
 function renderGastos(filtro, fechaEspecifica = null) {
   if (filtro) filtroGastosActivo = filtro;
@@ -1636,7 +1715,9 @@ function renderGastos(filtro, fechaEspecifica = null) {
     gastosFiltrados = [...gastos];
   }
 
-  gastosFiltrados = (gastosFiltrados || []).sort((a,b) => b.fecha.localeCompare(a.fecha));
+  gastosFiltrados = (gastosFiltrados || [])
+    .filter(g => (g.perfil || "gabriela") === perfilActivo)
+    .sort((a,b) => b.fecha.localeCompare(a.fecha));
 
   const totalG  = gastosFiltrados.reduce((s,g) => s + Number(g.monto || 0), 0);
   const conteoG = gastosFiltrados.length;
@@ -1722,6 +1803,7 @@ function cerrarModalGasto() {
   modalGasto.classList.remove("open");
   document.body.style.overflow = "";
   gastoEnEdicion = null;
+  listaItemPendienteId = null;
 }
 
 document.getElementById("btnCerrarGasto").addEventListener("click",   cerrarModalGasto);
@@ -1748,16 +1830,79 @@ document.getElementById("formGasto").addEventListener("submit", e => {
       showToast("Gasto actualizado ✓");
     }
   } else {
-    const nuevo = { id: uid(), descripcion: desc, categoria: categ, fecha, monto, notas, creadoEn: new Date().toISOString() };
+    const nuevo = { id: uid(), perfil: perfilActivo, descripcion: desc, categoria: categ, fecha, monto, notas, creadoEn: new Date().toISOString() };
     gastos.push(nuevo);
     _saveGasto(nuevo);
-    showToast(`Gasto "${desc}" registrado ✓`);
+    if (listaItemPendienteId) {
+      _deleteListaItem(listaItemPendienteId);
+      listaItemPendienteId = null;
+      showToast(`✅ "${desc}" comprado y registrado como gasto`);
+    } else {
+      showToast(`Gasto "${desc}" registrado ✓`);
+    }
   }
 
   cerrarModalGasto();
   if (document.getElementById("view-gastos").classList.contains("active")) renderGastos();
 });
 
+
+/* ═══════════════════════════════════════════════════════════
+   LISTA DE COMPRAS
+═══════════════════════════════════════════════════════════ */
+function renderListaCompras() {
+  const container = document.getElementById("listaComprasItems");
+  if (!container) return;
+  container.innerHTML = "";
+  if (listaCompras.length === 0) {
+    container.innerHTML = `<div class="no-resultados"><span>🛒</span>La lista está vacía — agrega el primer artículo arriba</div>`;
+    return;
+  }
+  const sorted = listaCompras.slice().sort((a,b) => (a.creadoEn||"").localeCompare(b.creadoEn||""));
+  sorted.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "lista-item-card";
+    card.innerHTML = `
+      <span class="lista-item-desc">${item.descripcion}</span>
+      ${item.cantidad ? `<span class="lista-item-cant">×${item.cantidad}</span>` : ""}
+      <button class="btn-lista-comprar" title="Marcar como comprado y registrar como gasto">✅ → Gasto</button>
+      <button class="btn-lista-del" title="Quitar de la lista sin registrar gasto">✕</button>
+    `;
+    card.querySelector(".btn-lista-comprar").addEventListener("click", () => convertirItemAGasto(item.id, item.descripcion, item.cantidad));
+    card.querySelector(".btn-lista-del").addEventListener("click", () => {
+      _deleteListaItem(item.id);
+      showToast(`"${item.descripcion}" quitado de la lista 🗑`);
+    });
+    container.appendChild(card);
+  });
+}
+
+document.getElementById("btnAddItem").addEventListener("click", () => {
+  const desc = document.getElementById("nuevoItemDesc").value.trim();
+  const cant = document.getElementById("nuevoItemCant").value.trim();
+  if (!desc) {
+    document.getElementById("nuevoItemDesc").classList.add("error");
+    showToast("Escribe qué necesitas comprar");
+    return;
+  }
+  document.getElementById("nuevoItemDesc").classList.remove("error");
+  const nuevo = { id: uid(), descripcion: desc, cantidad: cant || null, creadoEn: new Date().toISOString() };
+  _saveListaItem(nuevo);
+  document.getElementById("nuevoItemDesc").value = "";
+  document.getElementById("nuevoItemCant").value = "";
+  showToast(`"${desc}" agregado a la lista 🛒`);
+});
+
+document.getElementById("nuevoItemDesc").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("btnAddItem").click(); }
+});
+
+function convertirItemAGasto(itemId, desc, cantidad) {
+  listaItemPendienteId = itemId;
+  abrirModalGasto(null);
+  document.getElementById("gastoDescripcion").value = desc + (cantidad ? ` (×${cantidad})` : "");
+  document.getElementById("modalGastoTitulo").textContent = "💸 Registrar como Gasto";
+}
 
 /* ─── Lightbox de imágenes ─────────────────────────────── */
 let lbScale = 1;
